@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description: 'SocialBrand 1980 helps brands grow through structured strategy, creative storytelling, and data-driven execution. We manage brands, not just content.',
   generator: 'v0.app',
   icons: {
-    icon: '/socialbrand1980.png',
-    apple: '/socialbrand1980.png',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   },
 }
 
