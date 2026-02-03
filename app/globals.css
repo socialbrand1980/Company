@@ -272,3 +272,10 @@
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
 }
+
+/* Hide v0 built-with badge if present (fallback) */
+[id*="v0-built-with"], [id^="v0-built-with-button"], a[href*="v0.app"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
