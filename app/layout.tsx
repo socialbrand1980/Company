@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Socialbrand 1980 | Strategic Digital Agency',
-  description: 'Socialbrand 1980 helps brands grow through structured strategy, creative storytelling, and data-driven execution. We manage brands, not just content.',
+  title: 'SocialBrand 1980 | Strategic Digital Agency',
+  description: 'SocialBrand 1980 helps brands grow through structured strategy, creative storytelling, and data-driven execution. We manage brands, not just content.',
   generator: 'v0.app',
   icons: {
     icon: '/socialbrand1980.png',
