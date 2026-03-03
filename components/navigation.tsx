@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils"
 const navLinks = [
   { href: "#about", label: "About" },
   { href: "#services", label: "Services" },
-  { href: "/portfolio", label: "Portfolio", isExternal: true },
   { href: "#process", label: "Process" },
   { href: "#why-us", label: "Why Us" },
 ]
@@ -66,7 +65,7 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
-              link.isExternal || !isHomePage ? (
+              !isHomePage ? (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -87,8 +86,14 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Articles Link - Aligned to Right */}
-          <div className="hidden md:block">
+          {/* Portfolio & Articles Links - Aligned to Right */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
+            <Link
+              href="/portfolio"
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Portfolio
+            </Link>
             <Link
               href="/article"
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
@@ -119,7 +124,7 @@ export function Navigation() {
           <div className="md:hidden glass rounded-2xl mt-2 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                link.isExternal || !isHomePage ? (
+                !isHomePage ? (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -139,13 +144,22 @@ export function Navigation() {
                   </a>
                 )
               ))}
-              <Link
-                href="/article"
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Articles
-              </Link>
+              <div className="border-t border-border/50 pt-4 mt-2">
+                <Link
+                  href="/portfolio"
+                  className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Portfolio
+                </Link>
+                <Link
+                  href="/article"
+                  className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Articles
+                </Link>
+              </div>
               <Button asChild className="mt-2 neon-btn text-white font-medium">
                 <a href="https://wa.me/62811198093" target="_blank" rel="noopener noreferrer">Start a Project</a>
               </Button>
