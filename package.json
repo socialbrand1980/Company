@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "build:gh": "NEXT_PUBLIC_BASE_PATH=/Company next build",
+    "build:gh": "next build",
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",

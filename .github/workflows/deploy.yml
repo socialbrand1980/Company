@@ -1,4 +1,4 @@
-name: Deploy Next.js to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -25,6 +25,7 @@ jobs:
           cache: npm
 
       - run: npm ci
+      
       - run: npm run build:gh
         env:
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}

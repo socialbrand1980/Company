@@ -1,22 +1,28 @@
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { ArticleDetail } from "@/components/article-detail"
-import { client } from "@/lib/sanity"
+import ArticleDetailPage from '@/components/article-detail-page'
 
+// Generate static params for all articles at build time
 export async function generateStaticParams() {
-  try {
-    const articles = await client.fetch<{ slug: { current: string } }[]>(
-      `*[_type == "article" && defined(slug.current)] { "slug": slug.current }`
-    )
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+  
+  if (!projectId) {
+    return []
+  }
 
-    if (!articles || articles.length === 0) {
-      return []
-    }
+  try {
+    const query = encodeURIComponent('*[_type == "article" && defined(slug.current)]{ "slug": slug.current }')
+    const url = `https://${projectId}.api.sanity.io/v2021-03-25/data/query/${dataset}?query=${query}`
+    
+    const response = await fetch(url)
+    const data = await response.json()
+    const articles = data?.result || []
 
     return articles
-      .filter((article) => article.slug && article.slug.current)
-      .map((article) => ({
-        slug: article.slug.current,
+      .filter((a: any) => a?.slug?.current)
+      .map((a: any) => ({
+        slug: a.slug.current,
       }))
   } catch (error) {
     console.error('Error generating static params:', error)
@@ -24,12 +30,12 @@ export async function generateStaticParams() {
   }
 }
 
-export default function ArticleSlugPage() {
+export default function ArticleSlugPage({ params }: { params: { slug: string } }) {
   return (
     <>
       <Navigation />
       <main>
-        <ArticleDetail />
+        <ArticleDetailPage params={params} />
       </main>
       <Footer />
     </>
