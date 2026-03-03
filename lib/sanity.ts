@@ -47,6 +47,7 @@ export interface Article {
   publishedAt: string
   readTime: string
   featured: boolean
+  imageUrl?: string
   mainImage?: {
     asset?: {
       _ref: string
@@ -54,5 +55,5 @@ export interface Article {
     }
     alt?: string
   }
-  relatedArticles?: string[]
+  relatedArticles?: any[]
 }
