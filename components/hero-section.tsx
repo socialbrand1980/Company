@@ -58,7 +58,7 @@ export function HeroSection() {
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild className="w-full sm:w-auto neon-border text-foreground hover:bg-[#2D75FF]/10 bg-transparent backdrop-blur-sm">
-              <a href="#portfolio" onClick={(e) => scrollToSection(e, "#portfolio")}>View Our Work</a>
+              <a href="/portfolio">View Our Work</a>
             </Button>
           </div>
 
