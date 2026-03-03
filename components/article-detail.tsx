@@ -1,0 +1,225 @@
+"use client"
+
+import React from "react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { ArrowLeft, Calendar, Clock, Share2, Bookmark, MessageCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { PortableText } from '@portabletext/react'
+import { sanityFetch, type Article } from '@/lib/sanity'
+import imageUrlBuilder from '@sanity/image-url'
+import { client } from '@/lib/sanity'
+
+const builder = imageUrlBuilder(client)
+
+function urlFor(source: any) {
+  return builder.image(source)
+}
+
+const ARTICLE_QUERY = `*[_type == "article" && slug.current == $slug][0] {
+  _id,
+  title,
+  excerpt,
+  content,
+  category,
+  author,
+  publishedAt,
+  readTime,
+  featured,
+  "slug": slug.current,
+  "imageUrl": mainImage.asset->url,
+  "relatedArticles": relatedArticles[]->{
+    _id,
+    title,
+    "slug": slug.current,
+    category
+  }
+}`
+
+export function ArticleDetail() {
+  const params = useParams()
+  const slug = params.slug as string
+
+  const [article, setArticle] = React.useState<Article | null>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    async function fetchArticle() {
+      try {
+        const fetched = await sanityFetch<Article | null>({
+          query: ARTICLE_QUERY,
+          params: { slug },
+        })
+        setArticle(fetched)
+      } catch (error) {
+        console.error('Error fetching article:', error)
+        setArticle(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchArticle()
+  }, [slug])
+
+  const currentArticle = article
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading article...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentArticle) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
+          <p className="text-muted-foreground mb-6">Article not found</p>
+          <Button asChild className="neon-btn text-white">
+            <Link href="/article">Back to Articles</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <article className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden">
+      {/* Background neon glow */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2D75FF]/15 rounded-full blur-3xl animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/15 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: "2s" }} />
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <Link 
+          href="/article"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Articles
+        </Link>
+
+        {/* Article Header */}
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+              {currentArticle.category}
+            </span>
+          </div>
+          
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-6">
+            {currentArticle.title}
+          </h1>
+
+          <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+            {currentArticle.excerpt}
+          </p>
+
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 pb-6 border-b border-border/50">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{new Date(currentArticle.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>{currentArticle.readTime}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-xs">
+                {currentArticle.author.charAt(0)}
+              </span>
+              <span>{currentArticle.author}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 pt-6">
+            <Button variant="outline" size="sm" className="neon-border bg-transparent">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button variant="outline" size="sm" className="neon-border bg-transparent">
+              <Bookmark className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button variant="outline" size="sm" className="neon-border bg-transparent">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Discuss
+            </Button>
+          </div>
+        </div>
+
+        {/* Featured Image */}
+        {currentArticle.imageUrl && (
+          <div className="aspect-video w-full rounded-2xl mb-8 sm:mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
+            <img 
+              src={currentArticle.imageUrl} 
+              alt={currentArticle.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Article Content */}
+        <div className="prose prose-lg prose-invert max-w-none">
+          <div className="text-muted-foreground leading-relaxed space-y-6 article-content">
+            {currentArticle.content && (
+              <PortableText
+                value={currentArticle.content}
+                components={{
+                  block: {
+                    normal: ({children}) => <p className="mb-6">{children}</p>,
+                    h2: ({children}) => <h2 className="text-2xl font-bold text-foreground mt-8 mb-4">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-xl font-semibold text-foreground mt-6 mb-3">{children}</h3>,
+                  },
+                  marks: {
+                    strong: ({children}) => <strong className="font-semibold text-foreground">{children}</strong>,
+                    em: ({children}) => <em className="italic">{children}</em>,
+                  },
+                  list: {
+                    bullet: ({children}) => <ul className="list-disc list-inside space-y-2 my-4 ml-4">{children}</ul>,
+                    number: ({children}) => <ol className="list-decimal list-inside space-y-2 my-4 ml-4">{children}</ol>,
+                  },
+                  listItem: {
+                    bullet: ({children}) => <li className="text-muted-foreground">{children}</li>,
+                    number: ({children}) => <li className="text-muted-foreground">{children}</li>,
+                  },
+                }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Related Articles */}
+        {currentArticle.relatedArticles && currentArticle.relatedArticles.length > 0 && (
+          <div className="mt-16 pt-12 border-t border-border/50">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Related Articles</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentArticle.relatedArticles.map((relatedArticle: any) => {
+                if (!relatedArticle) return null
+                return (
+                  <Link
+                    key={relatedArticle._id}
+                    href={`/article/${relatedArticle.slug}`}
+                    className="glass-card p-4 rounded-xl transition-all duration-300 hover:scale-105"
+                  >
+                    <span className="text-xs text-primary font-medium">{relatedArticle.category}</span>
+                    <h3 className="text-sm font-semibold text-foreground mt-1 line-clamp-2">
+                      {relatedArticle.title}
+                    </h3>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
