@@ -4,8 +4,16 @@ const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2024-01-01'
 
+console.log('Sanity Config:', {
+  projectId: projectId ? '***' + projectId.slice(-4) : 'MISSING',
+  dataset,
+  apiVersion,
+  hasProjectId: !!projectId,
+})
+
 if (!projectId) {
-  throw new Error('NEXT_PUBLIC_SANITY_PROJECT_ID is not set in environment variables')
+  console.error('ERROR: NEXT_PUBLIC_SANITY_PROJECT_ID is not set!')
+  throw new Error('NEXT_PUBLIC_SANITY_PROJECT_ID is not set in environment variables. Please check Vercel environment variables.')
 }
 
 export const sanityConfig = {
@@ -14,8 +22,6 @@ export const sanityConfig = {
   apiVersion,
   // Use CDN: false to always get fresh data from Sanity
   useCdn: false,
-  // Add token for preview mode (optional, for draft content)
-  // token: process.env.SANITY_API_READ_TOKEN,
 }
 
 export const client = createClient(sanityConfig)
@@ -52,7 +58,7 @@ export interface Article {
   _createdAt: string
   _updatedAt: string
   title: string
-  slug: string  // Changed from { current: string } to string
+  slug: string
   excerpt: string
   content: any[]
   category: string

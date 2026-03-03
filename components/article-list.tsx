@@ -18,7 +18,8 @@ const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(p
   "imageUrl": mainImage.asset->url
 }`
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+const projectId = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SANITY_PROJECT_ID : undefined
+const dataset = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SANITY_DATASET || 'production' : undefined
 
 const CATEGORIES = [
   { name: "All", icon: Zap },
@@ -32,21 +33,26 @@ export function ArticleList() {
   const [articles, setArticles] = React.useState<Article[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = React.useState<string>('')
 
   React.useEffect(() => {
     async function fetchArticles() {
       try {
-        console.log('Fetching articles from Sanity...')
-        console.log('Project ID:', projectId)
+        const info = `Project ID: ${projectId}, Dataset: ${dataset}`
+        setDebugInfo(info)
+        console.log('📰 Fetching articles from Sanity...', info)
+        
         const fetched = await sanityFetch<Article[]>({
           query: ARTICLES_QUERY,
         })
-        console.log('Articles fetched:', fetched?.length || 0)
+        
+        console.log('✅ Articles fetched:', fetched?.length || 0, fetched)
         setArticles(fetched || [])
         setError(null)
-      } catch (err) {
-        console.error('Error fetching articles:', err)
-        setError('Failed to load articles. Please try again later.')
+      } catch (err: any) {
+        const errorMsg = err?.message || 'Unknown error'
+        console.error('❌ Error fetching articles:', err)
+        setError(`Failed to load articles: ${errorMsg}`)
         setArticles([])
       } finally {
         setLoading(false)
@@ -78,13 +84,18 @@ export function ArticleList() {
   if (error) {
     return (
       <section className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto">
           <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
             <Zap className="h-8 w-8 text-red-500" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load articles</h3>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <p className="text-sm text-muted-foreground">Project ID: {projectId}</p>
+          <p className="text-muted-foreground mb-4 text-sm">{error}</p>
+          {debugInfo && (
+            <p className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded mb-4">{debugInfo}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Check Vercel Environment Variables → Settings → Environment Variables
+          </p>
         </div>
       </section>
     )
