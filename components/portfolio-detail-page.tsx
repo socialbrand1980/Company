@@ -22,7 +22,8 @@ const PORTFOLIO_QUERY = `*[_type == "portfolio" && slug.current == $slug][0] {
   projectImage {
     asset {
       _ref,
-      _type
+      _type,
+      url
     }
   },
   "gallery": gallery[] {
@@ -155,23 +156,27 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
         </div>
 
         {/* Project Image */}
-        {portfolio.projectImageUrl ? (
-          <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-            <img
-              src={portfolio.projectImageUrl}
-              alt={portfolio.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : portfolio.projectImage?.asset?._ref ? (
-          <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-            <img
-              src={imageUrlFor(portfolio.projectImage, { width: 1200, quality: 85 })}
-              alt={portfolio.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : null}
+        {(() => {
+          // Try multiple ways to get the image URL
+          const imageUrl = portfolio.projectImageUrl || 
+                          (portfolio.projectImage?.asset && imageUrlFor(portfolio.projectImage, { width: 1200, quality: 85 }))
+          
+          if (!imageUrl) return null
+          
+          return (
+            <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
+              <img
+                src={imageUrl}
+                alt={portfolio.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Image failed to load:', imageUrl)
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
+          )
+        })()}
 
         {/* Description */}
         <div className="prose prose-lg prose-invert max-w-none mb-12">
