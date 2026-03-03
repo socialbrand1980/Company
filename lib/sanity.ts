@@ -109,7 +109,16 @@ export interface Portfolio {
   clientName: string
   clientLogoUrl?: string
   projectImageUrl?: string
-  gallery?: string[]
+  projectImage?: {
+    asset?: {
+      _ref: string
+      _type: string
+    }
+  }
+  gallery?: Array<{
+    url?: string
+    alt?: string
+  }>
   description: string
   services: string[]
   industry: string

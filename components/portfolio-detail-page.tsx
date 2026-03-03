@@ -25,12 +25,9 @@ const PORTFOLIO_QUERY = `*[_type == "portfolio" && slug.current == $slug][0] {
       _type
     }
   },
-  "gallery": gallery[].asset->url,
-  gallery[] {
-    asset {
-      _ref,
-      _type
-    }
+  "gallery": gallery[] {
+    "url": asset->url,
+    "alt": alt
   },
   results[] {
     metric,
@@ -219,19 +216,19 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
         )}
 
         {/* Gallery - Only show if has images */}
-        {portfolio.gallery && portfolio.gallery.length > 0 && (
+        {portfolio.gallery && portfolio.gallery.length > 0 && portfolio.gallery.some((img: any) => img.url) && (
           <div>
             <h2 className="text-2xl font-bold text-foreground mb-6">Project Gallery</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {portfolio.gallery.map((imageUrl: string, index: number) => (
-                imageUrl && (
+              {portfolio.gallery.map((image: { url?: string; alt?: string }, index: number) => (
+                image.url && (
                   <div
                     key={index}
                     className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20"
                   >
                     <img
-                      src={imageUrl}
-                      alt={`${portfolio.title} - Image ${index + 1}`}
+                      src={image.url}
+                      alt={image.alt || `${portfolio.title} - Image ${index + 1}`}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
