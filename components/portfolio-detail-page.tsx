@@ -176,10 +176,10 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
       </div>
 
       {/* Content Sections */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-12 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-12 lg:-mt-16 relative z-10">
         
         {/* Description */}
-        <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16">
+        <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16 lg:mb-20">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">About the Project</h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
             {portfolio.description}
