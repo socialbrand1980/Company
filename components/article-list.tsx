@@ -109,7 +109,7 @@ export function ArticleList() {
   }
 
   return (
-    <section className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden">
+    <section className="relative min-h-screen pt-32 sm:pt-40 lg:pt-48 pb-16 sm:pb-24 lg:pb-32 overflow-hidden">
       {/* Background neon glow */}
       <div className="absolute top-1/3 right-0 w-96 h-96 bg-[#2D75FF]/15 rounded-full blur-3xl animate-pulse-glow" />
       <div className="absolute bottom-1/3 left-0 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: "2s" }} />
