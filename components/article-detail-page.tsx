@@ -9,7 +9,6 @@ import { sanityFetch, type Article } from '@/lib/sanity'
 import imageUrlBuilder from '@sanity/image-url'
 import { client } from '@/lib/sanity'
 import { SubscriptionForm } from '@/components/subscription-form'
-import { ShareModal } from '@/components/share-modal'
 
 const builder = imageUrlBuilder(client)
 
@@ -84,6 +83,34 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
     }
     fetchArticle()
   }, [slug])
+
+  // Share function - basic native share
+  const handleShare = async () => {
+    if (!article) return
+    
+    const shareData = {
+      title: article.title,
+      text: article.excerpt,
+      url: window.location.href,
+    }
+
+    // Try native share first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        console.log('Share canceled')
+      }
+    } else {
+      // Fallback: copy to clipboard (desktop)
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        alert('Link copied to clipboard!')
+      } catch (err) {
+        console.error('Failed to copy:', err)
+      }
+    }
+  }
 
   // Save function
   const handleSave = () => {
@@ -194,11 +221,15 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
 
           <div className="flex items-center gap-3 pt-6 flex-wrap">
             <SubscriptionForm articleTitle={article.title} articleSlug={article.slug} />
-            <ShareModal 
-              title={article.title}
-              excerpt={article.excerpt}
-              url={typeof window !== 'undefined' ? window.location.href : ''}
-            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="neon-border bg-transparent"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
