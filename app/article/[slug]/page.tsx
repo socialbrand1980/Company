@@ -6,7 +6,7 @@ import ArticleDetailPage from '@/components/article-detail-page'
 export async function generateStaticParams() {
   const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
   const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
-  
+
   if (!projectId) {
     return []
   }
@@ -14,7 +14,7 @@ export async function generateStaticParams() {
   try {
     const query = encodeURIComponent('*[_type == "article" && defined(slug.current)]{ "slug": slug.current }')
     const url = `https://${projectId}.api.sanity.io/v2021-03-25/data/query/${dataset}?query=${query}`
-    
+
     const response = await fetch(url)
     const data = await response.json()
     const articles = data?.result || []
@@ -30,12 +30,15 @@ export async function generateStaticParams() {
   }
 }
 
-export default function ArticleSlugPage({ params }: { params: { slug: string } }) {
+// Server Component - receive params as async prop
+export default async function ArticleSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+
   return (
     <>
       <Navigation />
       <main>
-        <ArticleDetailPage params={params} />
+        <ArticleDetailPage slug={slug} />
       </main>
       <Footer />
     </>

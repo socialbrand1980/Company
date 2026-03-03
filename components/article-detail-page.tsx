@@ -35,9 +35,11 @@ const ARTICLE_QUERY = `*[_type == "article" && slug.current == $slug][0] {
   }
 }`
 
-export default function ArticleDetailPage({ params }: { params: { slug: string } }) {
-  const slug = params?.slug
-  
+interface ArticleDetailPageProps {
+  slug: string
+}
+
+export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
   const [article, setArticle] = React.useState<Article | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -51,10 +53,13 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
 
     async function fetchArticle() {
       try {
+        console.log('Fetching article with slug:', slug)
         const fetched = await sanityFetch<Article | null>({
           query: ARTICLE_QUERY,
           params: { slug },
         })
+        
+        console.log('Article fetched:', fetched ? fetched.title : 'null')
         
         if (!fetched) {
           setError('Article not found')
