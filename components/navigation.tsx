@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 const navLinks = [
   { href: "#about", label: "About" },
   { href: "#services", label: "Services" },
-  { href: "#portfolio", label: "Portfolio" },
+  { href: "/portfolio", label: "Portfolio", isExternal: true },
   { href: "#process", label: "Process" },
   { href: "#why-us", label: "Why Us" },
 ]
@@ -66,7 +66,7 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
-              !isHomePage ? (
+              link.isExternal || !isHomePage ? (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -119,7 +119,7 @@ export function Navigation() {
           <div className="md:hidden glass rounded-2xl mt-2 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                !isHomePage ? (
+                link.isExternal || !isHomePage ? (
                   <Link
                     key={link.href}
                     href={link.href}

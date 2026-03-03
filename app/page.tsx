@@ -2,7 +2,7 @@ import { Navigation } from "@/components/navigation"
 import { HeroSection } from "@/components/hero-section"
 import { AboutSection } from "@/components/about-section"
 import { ServicesSection } from "@/components/services-section"
-import { PortfolioSection } from "@/components/portfolio-section"
+import { ClientLogos } from "@/components/client-logos"
 import { ProcessSection } from "@/components/process-section"
 import { WhyUsSection } from "@/components/why-us-section"
 import { CTASection } from "@/components/cta-section"
@@ -14,9 +14,9 @@ export default function HomePage() {
       <Navigation />
       <main>
         <HeroSection />
+        <ClientLogos />
         <AboutSection />
         <ServicesSection />
-        <PortfolioSection />
         <ProcessSection />
         <WhyUsSection />
         <CTASection />

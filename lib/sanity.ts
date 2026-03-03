@@ -83,3 +83,23 @@ export interface Article {
   }
   relatedArticles?: any[]
 }
+
+export interface Portfolio {
+  _id: string
+  title: string
+  slug: string
+  clientName: string
+  clientLogoUrl?: string
+  projectImageUrl?: string
+  gallery?: string[]
+  description: string
+  services: string[]
+  industry: string
+  projectUrl?: string
+  completedDate: string
+  featured: boolean
+  results?: Array<{
+    metric: string
+    value: string
+  }>
+}
