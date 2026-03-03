@@ -40,55 +40,39 @@ export function ClientLogos() {
   }
 
   return (
-    <section className="py-16 sm:py-24 border-y border-border/50">
+    <section className="py-12 sm:py-16 border-y border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
+        <div className="text-center mb-8 sm:mb-10">
           <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-2 neon-text">
             Trusted By
           </p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
             Our Amazing Clients
           </h2>
         </div>
 
-        {/* Client Logos Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8">
+        {/* Client Logos Grid - Tight fit */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
           {clients.map((client: Portfolio, index: number) => (
             <div
               key={client._id}
-              className="flex items-center justify-center p-4 glass-card rounded-xl transition-all duration-300 hover:scale-105 hover:bg-primary/5"
+              className="flex items-center justify-center p-3 sm:p-4 glass-card rounded-xl transition-all duration-300 hover:scale-105 hover:bg-primary/5"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {client.clientLogoUrl ? (
                 <img
                   src={client.clientLogoUrl}
                   alt={client.clientName}
-                  className="max-h-12 w-auto object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                  className="max-h-10 sm:max-h-12 w-auto object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                   loading="lazy"
                 />
               ) : (
-                <span className="text-sm font-medium text-muted-foreground text-center">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground text-center">
                   {client.clientName}
                 </span>
               )}
             </div>
           ))}
-        </div>
-
-        {/* CTA */}
-        <div className="text-center mt-10">
-          <p className="text-sm text-muted-foreground mb-4">
-            Want to see your logo here?
-          </p>
-          <a
-            href="https://wa.me/62811198093"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-          >
-            Let's Work Together
-            <span aria-hidden="true">→</span>
-          </a>
         </div>
       </div>
     </section>
