@@ -101,7 +101,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* Category Filter - Horizontal Scroll */}
-          <div className="scrollable-categories mb-20 sm:mb-28 lg:mb-32">
+          <div className="scrollable-categories mb-24 sm:mb-32 lg:mb-40">
             {CATEGORIES.map((category) => (
               <button
                 key={category.name}
