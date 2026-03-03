@@ -101,26 +101,24 @@ export default function PortfolioPage() {
           </div>
 
           {/* Category Filter - Horizontal Scroll */}
-          <div className="mb-12 sm:mb-16 overflow-visible">
-            <div className="scrollable-categories px-4 sm:px-0">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.name}
-                  type="button"
-                  onClick={() => setActiveCategory(category.name)}
-                  className={`
-                    inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
-                    ${activeCategory === category.name
-                      ? "neon-btn text-white"
-                      : "glass-card text-muted-foreground hover:text-foreground hover:scale-105"
-                    }
-                  `}
-                >
-                  <category.icon className="h-4 w-4 flex-shrink-0" />
-                  <span>{category.name}</span>
-                </button>
-              ))}
-            </div>
+          <div className="scrollable-categories mb-12 sm:mb-16">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category.name}
+                type="button"
+                onClick={() => setActiveCategory(category.name)}
+                className={`
+                  inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap hover:scale-105
+                  ${activeCategory === category.name
+                    ? "neon-btn text-white"
+                    : "glass-card text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                <category.icon className="h-4 w-4 flex-shrink-0" />
+                <span>{category.name}</span>
+              </button>
+            ))}
           </div>
 
           {/* Featured Projects */}
