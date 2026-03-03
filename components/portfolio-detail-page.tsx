@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Globe, ExternalLink, TrendingUp } from "lucide-react"
+import { ArrowLeft, Calendar, Globe, ExternalLink, TrendingUp, CheckCircle2, Target, Lightbulb, Rocket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { sanityFetch, type Portfolio, imageUrlFor } from '@/lib/sanity'
 
@@ -38,6 +38,17 @@ const PORTFOLIO_QUERY = `*[_type == "portfolio" && slug.current == $slug][0] {
 
 interface PortfolioDetailPageProps {
   params: Promise<{ slug: string }>
+}
+
+// Service icons mapping
+const serviceIcons: Record<string, any> = {
+  "Brand Strategy": Target,
+  "Social Media Management": Rocket,
+  "Content Creation": Lightbulb,
+  "Web Development": Globe,
+  "Digital Marketing": TrendingUp,
+  "SEO": CheckCircle2,
+  "Paid Advertising": Target,
 }
 
 export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps) {
@@ -95,153 +106,167 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
     )
   }
 
+  // Get image URL with fallback
+  const imageUrl = portfolio.projectImageUrl ||
+                  (portfolio.projectImage?.asset && imageUrlFor(portfolio.projectImage, { width: 1200, quality: 85 }))
+
   return (
-    <article className="relative min-h-screen pt-32 pb-16 sm:pt-40 lg:pt-48">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
-        <Link
-          href="/portfolio"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Portfolio
-        </Link>
+    <article className="relative min-h-screen pb-16 sm:pb-24 lg:pb-32">
+      {/* Hero Section with Background Image */}
+      <div className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] w-full overflow-hidden">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={portfolio.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+        )}
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+        
+        {/* Content overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 lg:p-12">
+          <div className="max-w-6xl mx-auto">
+            {/* Back Button */}
+            <Link
+              href="/portfolio"
+              className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Portfolio
+            </Link>
 
-        {/* Project Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-6">
-            {portfolio.clientLogoUrl && (
-              <img
-                src={portfolio.clientLogoUrl}
-                alt={portfolio.clientName}
-                className="h-12 object-contain"
-              />
-            )}
-            <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-2">
-                {portfolio.title}
-              </h1>
-              <p className="text-lg text-muted-foreground">{portfolio.clientName}</p>
+            {/* Title & Client */}
+            <div className="flex items-start gap-4 mb-4">
+              {portfolio.clientLogoUrl && (
+                <img
+                  src={portfolio.clientLogoUrl}
+                  alt={portfolio.clientName}
+                  className="h-10 sm:h-12 object-contain bg-white/10 rounded-lg p-2"
+                />
+              )}
+              <div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+                  {portfolio.title}
+                </h1>
+                <p className="text-lg text-white/80">{portfolio.clientName}</p>
+              </div>
             </div>
-          </div>
 
-          {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-6 pb-6 border-b border-border/50">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {new Date(portfolio.completedDate).toLocaleDateString('en-US', {
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </span>
+            {/* Meta Info */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-white/80">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">
+                  {new Date(portfolio.completedDate).toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-sm">{portfolio.industry}</span>
+              </div>
+              {portfolio.projectUrl && (
+                <a
+                  href={portfolio.projectUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Globe className="h-4 w-4" />
+                  <ExternalLink className="h-3 w-3" />
+                  Visit Project
+                </a>
+              )}
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="h-4 w-4" />
-              <span>{portfolio.industry}</span>
-            </div>
-            {portfolio.projectUrl && (
-              <a
-                href={portfolio.projectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-primary hover:underline"
-              >
-                <Globe className="h-4 w-4" />
-                <ExternalLink className="h-3 w-3" />
-                Visit Project
-              </a>
-            )}
           </div>
         </div>
+      </div>
 
-        {/* Project Image */}
-        {(() => {
-          // Try multiple ways to get the image URL
-          const imageUrl = portfolio.projectImageUrl || 
-                          (portfolio.projectImage?.asset && imageUrlFor(portfolio.projectImage, { width: 1200, quality: 85 }))
-          
-          if (!imageUrl) return null
-          
-          return (
-            <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-              <img
-                src={imageUrl}
-                alt={portfolio.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error('Image failed to load:', imageUrl)
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-            </div>
-          )
-        })()}
-
+      {/* Content Sections */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-12 relative z-10">
+        
         {/* Description */}
-        <div className="prose prose-lg prose-invert max-w-none mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-4">About the Project</h2>
-          <p className="text-muted-foreground leading-relaxed">{portfolio.description}</p>
-        </div>
+        <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4">About the Project</h2>
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+            {portfolio.description}
+          </p>
+        </section>
 
         {/* Services */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Services Provided</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {portfolio.services?.map((service: string) => (
-              <div
-                key={service}
-                className="glass-card rounded-xl p-4 flex items-center gap-3"
-              >
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-foreground">{service}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {portfolio.services && portfolio.services.length > 0 && (
+          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Services Provided</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {portfolio.services.map((service: string, index: number) => {
+                const IconComponent = serviceIcons[service] || CheckCircle2
+                return (
+                  <div
+                    key={index}
+                    className="group p-5 rounded-xl bg-white/5 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <IconComponent className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-foreground font-medium">{service}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
-        {/* Results - Only show if has valid data */}
+        {/* Results */}
         {portfolio.results && portfolio.results.length > 0 && portfolio.results.some((r: any) => r.value && r.metric) && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Results Achieved</h2>
+          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-8">Results Achieved</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {portfolio.results.map((result: any, index: number) => (
                 result.value && result.metric && (
                   <div
                     key={index}
-                    className="glass-card rounded-xl p-6 text-center"
+                    className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20"
                   >
-                    <p className="text-3xl font-bold text-primary mb-2">{result.value}</p>
-                    <p className="text-sm text-muted-foreground">{result.metric}</p>
+                    <p className="text-4xl sm:text-5xl font-bold text-primary mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      {result.value}
+                    </p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{result.metric}</p>
                   </div>
                 )
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Gallery - Only show if has images */}
+        {/* Gallery */}
         {portfolio.gallery && portfolio.gallery.length > 0 && portfolio.gallery.some((img: any) => img.url) && (
-          <div>
-            <h2 className="text-2xl font-bold text-foreground mb-6">Project Gallery</h2>
+          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Project Gallery</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {portfolio.gallery.map((image: { url?: string; alt?: string }, index: number) => (
                 image.url && (
                   <div
                     key={index}
-                    className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20"
+                    className="group aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20"
                   >
                     <img
                       src={image.url}
                       alt={image.alt || `${portfolio.title} - Image ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       loading="lazy"
                     />
                   </div>
                 )
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </article>
