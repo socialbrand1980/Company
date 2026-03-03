@@ -18,6 +18,8 @@ const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(p
   "imageUrl": mainImage.asset->url
 }`
 
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+
 const CATEGORIES = [
   { name: "All", icon: Zap },
   { name: "Brand Strategy", icon: TrendingUp },
@@ -29,16 +31,22 @@ export function ArticleList() {
   const [activeCategory, setActiveCategory] = React.useState("All")
   const [articles, setArticles] = React.useState<Article[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function fetchArticles() {
       try {
+        console.log('Fetching articles from Sanity...')
+        console.log('Project ID:', projectId)
         const fetched = await sanityFetch<Article[]>({
           query: ARTICLES_QUERY,
         })
+        console.log('Articles fetched:', fetched?.length || 0)
         setArticles(fetched || [])
-      } catch (error) {
-        console.error('Error fetching articles:', error)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching articles:', err)
+        setError('Failed to load articles. Please try again later.')
         setArticles([])
       } finally {
         setLoading(false)
@@ -49,8 +57,8 @@ export function ArticleList() {
 
   const allArticles = articles
 
-  const filteredArticles = activeCategory === "All" 
-    ? allArticles 
+  const filteredArticles = activeCategory === "All"
+    ? allArticles
     : allArticles.filter((a: Article) => a.category === activeCategory)
 
   const featuredArticles = filteredArticles.filter((a: Article) => a.featured)
@@ -62,6 +70,21 @@ export function ArticleList() {
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading articles...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
+            <Zap className="h-8 w-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load articles</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <p className="text-sm text-muted-foreground">Project ID: {projectId}</p>
         </div>
       </section>
     )
@@ -112,16 +135,16 @@ export function ArticleList() {
         {featuredArticles.length > 0 && (
           <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
             {featuredArticles.map((article: Article, index: number) => (
-              <Link 
-                key={article._id} 
+              <Link
+                key={article._id}
                 href={`/article/${article.slug}`}
                 className="group glass-card rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="aspect-video w-full bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
                   {article.imageUrl ? (
-                    <img 
-                      src={article.imageUrl} 
+                    <img
+                      src={article.imageUrl}
                       alt={article.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
@@ -167,16 +190,16 @@ export function ArticleList() {
         {/* Regular Articles */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {regularArticles.map((article: Article, index: number) => (
-            <Link 
-              key={article._id} 
+            <Link
+              key={article._id}
               href={`/article/${article.slug}`}
               className="group glass-card rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="aspect-video w-full bg-gradient-to-br from-secondary/30 to-muted/30 relative overflow-hidden">
                 {article.imageUrl ? (
-                  <img 
-                    src={article.imageUrl} 
+                  <img
+                    src={article.imageUrl}
                     alt={article.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
@@ -213,7 +236,7 @@ export function ArticleList() {
         </div>
 
         {/* Empty State */}
-        {allArticles.length === 0 && !loading && (
+        {allArticles.length === 0 && !loading && !error && (
           <div className="text-center py-16">
             <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
               <Calendar className="h-8 w-8 text-muted-foreground" />

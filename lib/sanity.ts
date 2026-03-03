@@ -12,8 +12,10 @@ export const sanityConfig = {
   projectId,
   dataset,
   apiVersion,
-  // Use CDN: false during build to get fresh data, true for production runtime
+  // Use CDN: false to always get fresh data from Sanity
   useCdn: false,
+  // Add token for preview mode (optional, for draft content)
+  // token: process.env.SANITY_API_READ_TOKEN,
 }
 
 export const client = createClient(sanityConfig)
@@ -27,10 +29,22 @@ export async function sanityFetch<QueryResponse>({
   params?: QueryParams
   tags?: string[]
 }): Promise<QueryResponse> {
-  return client.fetch<QueryResponse>(query, params, {
-    cache: 'force-cache',
-    next: { tags },
-  })
+  try {
+    const result = await client.fetch<QueryResponse>(query, params, {
+      cache: 'no-store', // Always fetch fresh data
+      next: { tags },
+    })
+    return result
+  } catch (error) {
+    console.error('Sanity fetch error:', {
+      query: query.substring(0, 100) + '...',
+      params,
+      error,
+      projectId,
+      dataset,
+    })
+    throw error
+  }
 }
 
 export interface Article {
