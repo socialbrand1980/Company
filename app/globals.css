@@ -50,8 +50,8 @@
   --neon-cyan: oklch(0.75 0.15 200);
 
   /* Animation durations */
-  --animation-duration-1: 20s;
-  --animation-duration-2: 15s;
+  --animation-duration-1: 30s;
+  --animation-duration-2: 20s;
   --animation-duration-3: 10s;
 }
 
@@ -278,7 +278,7 @@
   animation: pulse-glow 4s ease-in-out infinite;
 }
 
-/* Running logos animation - infinite scroll */
+/* Running logos animation - infinite smooth scroll */
 @keyframes scroll-logos {
   0% {
     transform: translateX(0);
@@ -289,7 +289,8 @@
 }
 
 .animate-scroll-logos {
-  animation: scroll-logos var(--animation-duration-1, 20s) linear infinite;
+  animation: scroll-logos 30s linear infinite;
+  will-change: transform;
 }
 
 /* Hide v0 built-with badge if present (fallback) */

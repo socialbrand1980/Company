@@ -44,12 +44,12 @@ export function ClientLogos() {
 
   return (
     <section className="py-8 sm:py-12 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         {/* Running Client Logos - Infinite Loop */}
-        <div className="relative">
+        <div className="relative w-full">
           {/* Gradient fade on edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-black to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-black to-transparent z-10" />
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
           
           {/* Running logos container */}
           <div className="flex animate-scroll-logos">
@@ -58,12 +58,12 @@ export function ClientLogos() {
               client.clientLogoUrl && (
                 <div
                   key={`${client._id}-1-${index}`}
-                  className="flex-shrink-0 mx-4 sm:mx-6 lg:mx-8 transition-all duration-300 hover:scale-110"
+                  className="flex-shrink-0 mx-6 sm:mx-8 lg:mx-12 transition-all duration-300 hover:scale-110"
                 >
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-10 sm:h-12 lg:h-14 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
@@ -75,12 +75,12 @@ export function ClientLogos() {
               client.clientLogoUrl && (
                 <div
                   key={`${client._id}-2-${index}`}
-                  className="flex-shrink-0 mx-4 sm:mx-6 lg:mx-8 transition-all duration-300 hover:scale-110"
+                  className="flex-shrink-0 mx-6 sm:mx-8 lg:mx-12 transition-all duration-300 hover:scale-110"
                 >
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-10 sm:h-12 lg:h-14 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
@@ -92,12 +92,12 @@ export function ClientLogos() {
               client.clientLogoUrl && (
                 <div
                   key={`${client._id}-3-${index}`}
-                  className="flex-shrink-0 mx-4 sm:mx-6 lg:mx-8 transition-all duration-300 hover:scale-110"
+                  className="flex-shrink-0 mx-6 sm:mx-8 lg:mx-12 transition-all duration-300 hover:scale-110"
                 >
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-10 sm:h-12 lg:h-14 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
