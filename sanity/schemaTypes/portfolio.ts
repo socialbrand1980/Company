@@ -94,13 +94,12 @@ export const portfolio = defineType({
       of: [{ type: 'string' }],
       options: {
         list: [
-          { title: 'Brand Strategy', value: 'Brand Strategy' },
+          { title: 'Brand Strategy & Positioning', value: 'Brand Strategy & Positioning' },
           { title: 'Social Media Management', value: 'Social Media Management' },
-          { title: 'Content Creation', value: 'Content Creation' },
-          { title: 'Web Development', value: 'Web Development' },
-          { title: 'Digital Marketing', value: 'Digital Marketing' },
-          { title: 'SEO', value: 'SEO' },
-          { title: 'Paid Advertising', value: 'Paid Advertising' },
+          { title: 'Content Production', value: 'Content Production' },
+          { title: 'KOL & Influencer Activation', value: 'KOL & Influencer Activation' },
+          { title: 'Paid Ads (Meta & Google)', value: 'Paid Ads (Meta & Google)' },
+          { title: 'Omnichannel Marketing Strategy', value: 'Omnichannel Marketing Strategy' },
         ],
       },
       validation: (rule) => rule.required(),

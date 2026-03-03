@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { Calendar, ArrowRight, TrendingUp, Users, Zap, Globe, Code, Megaphone } from "lucide-react"
+import { Calendar, ArrowRight, Compass, MessageSquare, Camera, Users2, Target, Layers, Zap } from "lucide-react"
 import { sanityFetch, type Portfolio } from '@/lib/sanity'
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
@@ -22,17 +22,18 @@ const PORTFOLIOS_QUERY = `*[_type == "portfolio" && defined(slug.current)] | ord
   projectUrl,
 }`
 
-const INDUSTRIES = [
+const CATEGORIES = [
   { name: "All", icon: Zap },
-  { name: "Technology", icon: Code },
-  { name: "Fashion", icon: TrendingUp },
-  { name: "Food & Beverage", icon: Users },
-  { name: "E-commerce", icon: Globe },
-  { name: "Other", icon: Zap },
+  { name: "Brand Strategy & Positioning", icon: Compass },
+  { name: "Social Media Management", icon: MessageSquare },
+  { name: "Content Production", icon: Camera },
+  { name: "KOL & Influencer Activation", icon: Users2 },
+  { name: "Paid Ads (Meta & Google)", icon: Target },
+  { name: "Omnichannel Marketing Strategy", icon: Layers },
 ]
 
 export default function PortfolioPage() {
-  const [activeIndustry, setActiveIndustry] = React.useState("All")
+  const [activeCategory, setActiveCategory] = React.useState("All")
   const [portfolios, setPortfolios] = React.useState<Portfolio[]>([])
   const [loading, setLoading] = React.useState(true)
 
@@ -53,9 +54,9 @@ export default function PortfolioPage() {
     fetchPortfolios()
   }, [])
 
-  const filteredPortfolios = activeIndustry === "All"
+  const filteredPortfolios = activeCategory === "All"
     ? portfolios
-    : portfolios.filter((p: Portfolio) => p.industry === activeIndustry)
+    : portfolios.filter((p: Portfolio) => p.services?.includes(activeCategory))
 
   const featuredPortfolios = filteredPortfolios.filter((p: Portfolio) => p.featured)
   const regularPortfolios = filteredPortfolios.filter((p: Portfolio) => !p.featured)
@@ -99,23 +100,23 @@ export default function PortfolioPage() {
             </p>
           </div>
 
-          {/* Industry Filter */}
+          {/* Category Filter */}
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-12 sm:mb-16">
-            {INDUSTRIES.map((industry) => (
+            {CATEGORIES.map((category) => (
               <button
-                key={industry.name}
+                key={category.name}
                 type="button"
-                onClick={() => setActiveIndustry(industry.name)}
+                onClick={() => setActiveCategory(category.name)}
                 className={`
                   inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300
-                  ${activeIndustry === industry.name
+                  ${activeCategory === category.name
                     ? "neon-btn text-white"
                     : "glass-card text-muted-foreground hover:text-foreground hover:scale-105"
                   }
                 `}
               >
-                <industry.icon className="h-4 w-4" />
-                {industry.name}
+                <category.icon className="h-4 w-4" />
+                {category.name}
               </button>
             ))}
           </div>
