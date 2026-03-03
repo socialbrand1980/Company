@@ -32,9 +32,14 @@ export function Navigation() {
   }, [])
 
   const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (!isHomePage) return
-
     e.preventDefault()
+    
+    if (!isHomePage) {
+      // Navigate to homepage with hash
+      window.location.href = `/${href}`
+      return
+    }
+
     const targetId = href.replace("#", "")
     const element = document.getElementById(targetId)
     if (element) {
