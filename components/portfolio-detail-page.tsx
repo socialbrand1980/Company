@@ -221,12 +221,12 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
                   result.value && result.metric && (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 sm:p-5 rounded-xl bg-white/5 border border-border/50 hover:border-primary/30 transition-colors"
+                      className="flex items-center gap-3 p-4 sm:p-5 rounded-xl bg-white/5 border border-border/50 hover:border-primary/30 transition-colors"
                     >
-                      <span className="text-sm sm:text-base text-muted-foreground">
+                      <span className="text-sm sm:text-base text-muted-foreground flex-1">
                         {result.metric}
                       </span>
-                      <span className="text-xl sm:text-2xl font-bold text-primary">
+                      <span className="text-sm sm:text-base font-semibold text-primary whitespace-nowrap">
                         {result.value}
                       </span>
                     </div>
