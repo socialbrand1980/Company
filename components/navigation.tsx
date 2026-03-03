@@ -20,6 +20,8 @@ export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const isHomePage = pathname === "/"
+  const isPortfolioPage = pathname === "/portfolio"
+  const isArticlesPage = pathname === "/article"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,7 +33,7 @@ export function Navigation() {
 
   const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!isHomePage) return
-    
+
     e.preventDefault()
     const targetId = href.replace("#", "")
     const element = document.getElementById(targetId)
@@ -43,6 +45,35 @@ export function Navigation() {
       })
     }
     setIsOpen(false)
+  }, [isHomePage])
+
+  // Check if section is active (for homepage scroll sections)
+  const [activeSection, setActiveSection] = useState("")
+
+  useEffect(() => {
+    if (!isHomePage) {
+      setActiveSection("")
+      return
+    }
+
+    const handleScroll = () => {
+      const sections = ["about", "services", "process", "why-us"]
+      const scrollPosition = window.scrollY + 100
+
+      for (const section of sections) {
+        const element = document.getElementById(section)
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(section)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [isHomePage])
 
   return (
@@ -64,41 +95,55 @@ export function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
-            {navLinks.map((link) => (
-              !isHomePage ? (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all hover:after:w-full"
-                >
-                  {link.label}
-                </Link>
-              ) : (
+            {navLinks.map((link) => {
+              const isActive = isHomePage && activeSection === link.href.replace("#", "")
+              return (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={(e) => scrollToSection(e, link.href)}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                  className={`text-sm font-medium transition-all relative after:absolute after:bottom-0 after:left-0 after:h-px after:bg-primary after:transition-all ${
+                    isActive
+                      ? "text-primary after:w-full"
+                      : "text-muted-foreground hover:text-primary after:w-0 hover:after:w-full"
+                  }`}
                 >
                   {link.label}
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary blur-[2px]" />
+                  )}
                 </a>
               )
-            ))}
+            })}
           </div>
 
           {/* Portfolio & Articles Links - Aligned to Right */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <Link
               href="/portfolio"
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className={`text-sm font-medium transition-all relative after:absolute after:bottom-0 after:left-0 after:h-px after:bg-primary after:transition-all ${
+                isPortfolioPage
+                  ? "text-primary after:w-full"
+                  : "text-muted-foreground hover:text-primary after:w-0 hover:after:w-full"
+              }`}
             >
               Portfolio
+              {isPortfolioPage && (
+                <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary blur-[2px]" />
+              )}
             </Link>
             <Link
               href="/article"
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className={`text-sm font-medium transition-all relative after:absolute after:bottom-0 after:left-0 after:h-px after:bg-primary after:transition-all ${
+                isArticlesPage
+                  ? "text-primary after:w-full"
+                  : "text-muted-foreground hover:text-primary after:w-0 hover:after:w-full"
+              }`}
             >
               Articles
+              {isArticlesPage && (
+                <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary blur-[2px]" />
+              )}
             </Link>
           </div>
 
@@ -123,40 +168,43 @@ export function Navigation() {
         {isOpen && (
           <div className="md:hidden glass rounded-2xl mt-2 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                !isHomePage ? (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ) : (
+              {navLinks.map((link) => {
+                const isActive = isHomePage && activeSection === link.href.replace("#", "")
+                return (
                   <a
                     key={link.href}
                     href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
-                    onClick={(e) => scrollToSection(e, link.href)}
+                    className={`text-sm font-medium transition-colors ${
+                      isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
+                    }`}
+                    onClick={(e) => {
+                      scrollToSection(e, link.href)
+                    }}
                   >
+                    {isActive && <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2" />}
                     {link.label}
                   </a>
                 )
-              ))}
+              })}
               <div className="border-t border-border/50 pt-4 mt-2">
                 <Link
                   href="/portfolio"
-                  className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+                  className={`block text-sm font-medium transition-colors py-2 ${
+                    isPortfolioPage ? "text-primary" : "text-muted-foreground hover:text-primary"
+                  }`}
                   onClick={() => setIsOpen(false)}
                 >
+                  {isPortfolioPage && <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2" />}
                   Portfolio
                 </Link>
                 <Link
                   href="/article"
-                  className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+                  className={`block text-sm font-medium transition-colors py-2 ${
+                    isArticlesPage ? "text-primary" : "text-muted-foreground hover:text-primary"
+                  }`}
                   onClick={() => setIsOpen(false)}
                 >
+                  {isArticlesPage && <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2" />}
                   Articles
                 </Link>
               </div>
