@@ -40,38 +40,25 @@ export function ClientLogos() {
   }
 
   return (
-    <section className="py-12 sm:py-16 border-y border-border/50">
+    <section className="py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 sm:mb-10">
-          <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-2 neon-text">
-            Trusted By
-          </p>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
-            Our Amazing Clients
-          </h2>
-        </div>
-
-        {/* Client Logos Grid - Tight fit */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+        {/* Client Logos - Just images, no wrappers */}
+        <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-12">
           {clients.map((client: Portfolio, index: number) => (
-            <div
-              key={client._id}
-              className="flex items-center justify-center p-3 sm:p-4 glass-card rounded-xl transition-all duration-300 hover:scale-105 hover:bg-primary/5"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              {client.clientLogoUrl ? (
+            client.clientLogoUrl && (
+              <div
+                key={client._id}
+                className="transition-all duration-300 hover:scale-110"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <img
                   src={client.clientLogoUrl}
                   alt={client.clientName}
-                  className="max-h-10 sm:max-h-12 w-auto object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                  className="h-8 sm:h-10 lg:h-12 w-auto object-contain filter grayscale hover:grayscale-0"
                   loading="lazy"
                 />
-              ) : (
-                <span className="text-xs sm:text-sm font-medium text-muted-foreground text-center">
-                  {client.clientName}
-                </span>
-              )}
-            </div>
+              </div>
+            )
           ))}
         </div>
       </div>
