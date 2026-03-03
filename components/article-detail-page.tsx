@@ -8,6 +8,7 @@ import { PortableText } from '@portabletext/react'
 import { sanityFetch, type Article } from '@/lib/sanity'
 import imageUrlBuilder from '@sanity/image-url'
 import { client } from '@/lib/sanity'
+import { SubscriptionForm } from '@/components/subscription-form'
 
 const builder = imageUrlBuilder(client)
 
@@ -146,7 +147,8 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-6">
+          <div className="flex items-center gap-3 pt-6 flex-wrap">
+            <SubscriptionForm articleTitle={article.title} articleSlug={article.slug} />
             <Button variant="outline" size="sm" className="neon-border bg-transparent">
               <Share2 className="h-4 w-4 mr-2" />
               Share

@@ -4,6 +4,7 @@ import React from "react"
 import Link from "next/link"
 import { Calendar, Clock, ArrowRight, TrendingUp, Users2, Zap } from "lucide-react"
 import { sanityFetch, type Article } from '@/lib/sanity'
+import { SubscriptionForm } from '@/components/subscription-form'
 
 const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(publishedAt desc, featured desc) {
   _id,
@@ -119,6 +120,11 @@ export function ArticleList() {
           <p className="mt-4 text-base sm:text-lg text-muted-foreground">
             Expert insights on brand strategy, social media marketing, and digital growth.
           </p>
+          
+          {/* Subscribe CTA */}
+          <div className="mt-6 flex justify-center">
+            <SubscriptionForm />
+          </div>
         </div>
 
         {/* Category Filter */}
