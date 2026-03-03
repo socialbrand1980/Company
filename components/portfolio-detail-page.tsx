@@ -138,22 +138,10 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
               Back to Portfolio
             </Link>
 
-            {/* Title & Client */}
-            <div className="flex items-start gap-4 mb-4">
-              {portfolio.clientLogoUrl && (
-                <img
-                  src={portfolio.clientLogoUrl}
-                  alt={portfolio.clientName}
-                  className="h-10 sm:h-12 object-contain bg-white/10 rounded-lg p-2"
-                />
-              )}
-              <div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
-                  {portfolio.title}
-                </h1>
-                <p className="text-lg text-white/80">{portfolio.clientName}</p>
-              </div>
-            </div>
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 max-w-4xl">
+              {portfolio.title}
+            </h1>
 
             {/* Meta Info */}
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-white/80">
@@ -191,8 +179,8 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-12 relative z-10">
         
         {/* Description */}
-        <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4">About the Project</h2>
+        <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">About the Project</h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
             {portfolio.description}
           </p>
@@ -200,8 +188,8 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
 
         {/* Services */}
         {portfolio.services && portfolio.services.length > 0 && (
-          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Services Provided</h2>
+          <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-8">Services Provided</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {portfolio.services.map((service: string, index: number) => {
                 const IconComponent = serviceIcons[service] || CheckCircle2
@@ -223,21 +211,23 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
           </section>
         )}
 
-        {/* Results */}
+        {/* Results - Minimalist */}
         {portfolio.results && portfolio.results.length > 0 && portfolio.results.some((r: any) => r.value && r.metric) && (
-          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-10">
+          <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-8">Results Achieved</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {portfolio.results.map((result: any, index: number) => (
                 result.value && result.metric && (
                   <div
                     key={index}
-                    className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20"
+                    className="text-center"
                   >
-                    <p className="text-4xl sm:text-5xl font-bold text-primary mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1">
                       {result.value}
                     </p>
-                    <p className="text-sm sm:text-base text-muted-foreground">{result.metric}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {result.metric}
+                    </p>
                   </div>
                 )
               ))}
@@ -247,8 +237,8 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
 
         {/* Gallery */}
         {portfolio.gallery && portfolio.gallery.length > 0 && portfolio.gallery.some((img: any) => img.url) && (
-          <section className="glass-card rounded-2xl p-6 sm:p-8 lg:p-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Project Gallery</h2>
+          <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-8">Project Gallery</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {portfolio.gallery.map((image: { url?: string; alt?: string }, index: number) => (
                 image.url && (
