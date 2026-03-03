@@ -22,11 +22,29 @@ export const client = createClient(sanityConfig)
 
 // Image URL helper with optimization
 export function imageUrlFor(source: any, options?: { width?: number; height?: number; quality?: number }) {
-  if (!source?.asset?._ref) return null
+  if (!source) return null
+  
+  // Handle different source formats
+  let imageId: string
+  let extension: string
+  
+  if (source.asset?._ref) {
+    // Format: { asset: { _ref: 'image-xxx-png' } }
+    const parts = source.asset._ref.split('-')
+    imageId = parts[1]
+    extension = parts[3]
+  } else if (source._ref) {
+    // Format: { _ref: 'image-xxx-png' }
+    const parts = source._ref.split('-')
+    imageId = parts[1]
+    extension = parts[3]
+  } else {
+    return null
+  }
+  
+  if (!imageId || !extension) return null
   
   const { width = 800, height, quality = 80 } = options || {}
-  const imageId = source.asset._ref.split('-')[1]
-  const extension = source.asset._ref.split('-')[3]
   
   let url = `https://cdn.sanity.io/images/${projectId}/${dataset}/${imageId}.${extension}?w=${width}&q=${quality}`
   if (height) url += `&h=${height}`

@@ -19,7 +19,19 @@ const PORTFOLIO_QUERY = `*[_type == "portfolio" && slug.current == $slug][0] {
   projectUrl,
   "clientLogoUrl": clientLogo.asset->url,
   "projectImageUrl": projectImage.asset->url,
+  projectImage {
+    asset {
+      _ref,
+      _type
+    }
+  },
   "gallery": gallery[].asset->url,
+  gallery[] {
+    asset {
+      _ref,
+      _type
+    }
+  },
   results[] {
     metric,
     value
@@ -146,15 +158,23 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
         </div>
 
         {/* Project Image */}
-        {portfolio.projectImageUrl && (
+        {portfolio.projectImageUrl ? (
           <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
             <img
-              src={imageUrlFor({ asset: { _ref: portfolio.projectImageUrl } }, { width: 1200, quality: 85 }) || portfolio.projectImageUrl}
+              src={portfolio.projectImageUrl}
               alt={portfolio.title}
               className="w-full h-full object-cover"
             />
           </div>
-        )}
+        ) : portfolio.projectImage?.asset?._ref ? (
+          <div className="aspect-video w-full rounded-2xl mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
+            <img
+              src={imageUrlFor(portfolio.projectImage, { width: 1200, quality: 85 })}
+              alt={portfolio.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
 
         {/* Description */}
         <div className="prose prose-lg prose-invert max-w-none mb-12">
@@ -178,41 +198,45 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
           </div>
         </div>
 
-        {/* Results */}
-        {portfolio.results && portfolio.results.length > 0 && (
+        {/* Results - Only show if has valid data */}
+        {portfolio.results && portfolio.results.length > 0 && portfolio.results.some((r: any) => r.value && r.metric) && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-foreground mb-6">Results Achieved</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {portfolio.results.map((result: any, index: number) => (
-                <div
-                  key={index}
-                  className="glass-card rounded-xl p-6 text-center"
-                >
-                  <p className="text-3xl font-bold text-primary mb-2">{result.value}</p>
-                  <p className="text-sm text-muted-foreground">{result.metric}</p>
-                </div>
+                result.value && result.metric && (
+                  <div
+                    key={index}
+                    className="glass-card rounded-xl p-6 text-center"
+                  >
+                    <p className="text-3xl font-bold text-primary mb-2">{result.value}</p>
+                    <p className="text-sm text-muted-foreground">{result.metric}</p>
+                  </div>
+                )
               ))}
             </div>
           </div>
         )}
 
-        {/* Gallery */}
+        {/* Gallery - Only show if has images */}
         {portfolio.gallery && portfolio.gallery.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-foreground mb-6">Project Gallery</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {portfolio.gallery.map((imageUrl: string, index: number) => (
-                <div
-                  key={index}
-                  className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20"
-                >
-                  <img
-                    src={imageUrl}
-                    alt={`${portfolio.title} - Image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
+                imageUrl && (
+                  <div
+                    key={index}
+                    className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`${portfolio.title} - Image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )
               ))}
             </div>
           </div>
