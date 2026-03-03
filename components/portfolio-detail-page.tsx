@@ -211,26 +211,28 @@ export default function PortfolioDetailPage({ params }: PortfolioDetailPageProps
           </section>
         )}
 
-        {/* Results - Minimalist */}
+        {/* Results - Table Format */}
         {portfolio.results && portfolio.results.length > 0 && portfolio.results.some((r: any) => r.value && r.metric) && (
-          <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16">
+          <section className="glass-card rounded-2xl p-8 sm:p-10 lg:p-12 mb-12 sm:mb-16 lg:mb-20">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-8">Results Achieved</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {portfolio.results.map((result: any, index: number) => (
-                result.value && result.metric && (
-                  <div
-                    key={index}
-                    className="text-center"
-                  >
-                    <p className="text-3xl sm:text-4xl font-bold text-primary mb-1">
-                      {result.value}
-                    </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {result.metric}
-                    </p>
-                  </div>
-                )
-              ))}
+            <div className="overflow-hidden">
+              <div className="space-y-3">
+                {portfolio.results.map((result: any, index: number) => (
+                  result.value && result.metric && (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 sm:p-5 rounded-xl bg-white/5 border border-border/50 hover:border-primary/30 transition-colors"
+                    >
+                      <span className="text-sm sm:text-base text-muted-foreground">
+                        {result.metric}
+                      </span>
+                      <span className="text-xl sm:text-2xl font-bold text-primary">
+                        {result.value}
+                      </span>
+                    </div>
+                  )
+                ))}
+              </div>
             </div>
           </section>
         )}
