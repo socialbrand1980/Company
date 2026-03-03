@@ -56,9 +56,8 @@ export function SubscriptionForm({ articleTitle, articleSlug }: SubscriptionForm
     setError('')
 
     try {
-      // Option 1: Use Formspree (free, no backend needed)
-      // Register at https://formspree.io/ and replace the URL
-      const formspreeUrl = 'https://formspree.io/f/YOUR_FORMSPREE_ID'
+      // Formspree integration
+      const formspreeUrl = 'https://formspree.io/f/xgoljrae'
       
       const response = await fetch(formspreeUrl, {
         method: 'POST',
