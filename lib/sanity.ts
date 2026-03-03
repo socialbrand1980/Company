@@ -12,7 +12,8 @@ export const sanityConfig = {
   projectId,
   dataset,
   apiVersion,
-  useCdn: process.env.NODE_ENV === 'production',
+  // Use CDN: false during build to get fresh data, true for production runtime
+  useCdn: false,
 }
 
 export const client = createClient(sanityConfig)
