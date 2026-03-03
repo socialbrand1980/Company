@@ -174,7 +174,7 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
   }
 
   return (
-    <article className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden">
+    <article className="relative min-h-screen pt-32 sm:pt-40 lg:pt-48 pb-16 sm:pb-24 lg:pb-32 overflow-hidden">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2D75FF]/15 rounded-full blur-3xl animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/15 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: "2s" }} />
 
