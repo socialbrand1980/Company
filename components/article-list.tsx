@@ -3,8 +3,9 @@
 import React from "react"
 import Link from "next/link"
 import { Calendar, Clock, ArrowRight, TrendingUp, Users2, Zap } from "lucide-react"
-import { sanityFetch, type Article } from '@/lib/sanity'
+import { sanityFetch, type Article, imageUrlFor } from '@/lib/sanity'
 import { SubscriptionForm } from '@/components/subscription-form'
+import { Button } from '@/components/ui/button'
 
 const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(publishedAt desc, featured desc) {
   _id,
@@ -19,9 +20,6 @@ const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(p
   "imageUrl": mainImage.asset->url
 }`
 
-const projectId = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SANITY_PROJECT_ID : undefined
-const dataset = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SANITY_DATASET || 'production' : undefined
-
 const CATEGORIES = [
   { name: "All", icon: Zap },
   { name: "Brand Strategy", icon: TrendingUp },
@@ -29,30 +27,44 @@ const CATEGORIES = [
   { name: "Content Marketing", icon: Calendar },
 ]
 
+// Skeleton loader component
+function ArticleSkeleton() {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-pulse">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="glass-card rounded-2xl overflow-hidden">
+          <div className="aspect-video w-full bg-white/5" />
+          <div className="p-4 sm:p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-20 bg-white/5 rounded" />
+              <div className="h-3 w-16 bg-white/5 rounded" />
+            </div>
+            <div className="h-5 w-3/4 bg-white/5 rounded" />
+            <div className="h-4 w-full bg-white/5 rounded" />
+            <div className="h-4 w-2/3 bg-white/5 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function ArticleList() {
   const [activeCategory, setActiveCategory] = React.useState("All")
   const [articles, setArticles] = React.useState<Article[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = React.useState<string>('')
 
   React.useEffect(() => {
     async function fetchArticles() {
       try {
-        const info = `Project ID: ${projectId}, Dataset: ${dataset}`
-        setDebugInfo(info)
-        console.log('📰 Fetching articles from Sanity...', info)
-        
         const fetched = await sanityFetch<Article[]>({
           query: ARTICLES_QUERY,
         })
-        
-        console.log('✅ Articles fetched:', fetched?.length || 0, fetched)
         setArticles(fetched || [])
         setError(null)
       } catch (err: any) {
         const errorMsg = err?.message || 'Unknown error'
-        console.error('❌ Error fetching articles:', err)
         setError(`Failed to load articles: ${errorMsg}`)
         setArticles([])
       } finally {
@@ -73,10 +85,14 @@ export function ArticleList() {
 
   if (loading) {
     return (
-      <section className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading articles...</p>
+      <section className="relative min-h-screen pt-32 sm:pt-40 lg:pt-48 pb-16 sm:pb-24 lg:pb-32 overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16 space-y-4 animate-pulse">
+            <div className="h-4 w-48 bg-white/5 rounded mx-auto" />
+            <div className="h-12 w-96 bg-white/5 rounded mx-auto" />
+            <div className="h-5 w-80 bg-white/5 rounded mx-auto" />
+          </div>
+          <ArticleSkeleton />
         </div>
       </section>
     )
@@ -84,19 +100,16 @@ export function ArticleList() {
 
   if (error) {
     return (
-      <section className="relative min-h-screen py-16 sm:py-24 lg:py-32 overflow-hidden flex items-center justify-center">
+      <section className="relative min-h-screen pt-32 sm:pt-40 lg:pt-48 pb-16 sm:pb-24 lg:pb-32 overflow-hidden flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
             <Zap className="h-8 w-8 text-red-500" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load articles</h3>
           <p className="text-muted-foreground mb-4 text-sm">{error}</p>
-          {debugInfo && (
-            <p className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded mb-4">{debugInfo}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Check Vercel Environment Variables → Settings → Environment Variables
-          </p>
+          <Button onClick={() => window.location.reload()} className="neon-btn text-white">
+            Try Again
+          </Button>
         </div>
       </section>
     )
@@ -161,9 +174,10 @@ export function ArticleList() {
                 <div className="aspect-video w-full bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
                   {article.imageUrl ? (
                     <img
-                      src={article.imageUrl}
-                      alt={article.title}
+                      src={imageUrlFor(article.mainImage, { width: 600, height: 338, quality: 75 }) || article.imageUrl}
+                      alt={article.mainImage?.alt || article.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -216,9 +230,10 @@ export function ArticleList() {
               <div className="aspect-video w-full bg-gradient-to-br from-secondary/30 to-muted/30 relative overflow-hidden">
                 {article.imageUrl ? (
                   <img
-                    src={article.imageUrl}
-                    alt={article.title}
+                    src={imageUrlFor(article.mainImage, { width: 400, height: 225, quality: 70 }) || article.imageUrl}
+                    alt={article.mainImage?.alt || article.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -253,7 +268,7 @@ export function ArticleList() {
         </div>
 
         {/* Empty State */}
-        {allArticles.length === 0 && !loading && !error && (
+        {allArticles.length === 0 && (
           <div className="text-center py-16">
             <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
               <Calendar className="h-8 w-8 text-muted-foreground" />

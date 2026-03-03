@@ -29,9 +29,9 @@ const caseStudies = [
     challenge: "New market entry with zero brand awareness",
     result: "Built Brand Awareness in 4 months",
     metrics: [
-      { label: "Community Size", value: "30K+" },
-      { label: "Store Visits", value: "+89%" },
-      { label: "Brand Trust", value: "72%" }
+      { label: "Followers", value: "30K+" },
+      { label: "A Week on AVG", value: "10 Cst" },
+      { label: "Brand Trust", value: "99%" }
     ]
   }
 ]

@@ -4,16 +4,8 @@ const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2024-01-01'
 
-console.log('Sanity Config:', {
-  projectId: projectId ? '***' + projectId.slice(-4) : 'MISSING',
-  dataset,
-  apiVersion,
-  hasProjectId: !!projectId,
-})
-
 if (!projectId) {
-  console.error('ERROR: NEXT_PUBLIC_SANITY_PROJECT_ID is not set!')
-  throw new Error('NEXT_PUBLIC_SANITY_PROJECT_ID is not set in environment variables. Please check Vercel environment variables.')
+  throw new Error('NEXT_PUBLIC_SANITY_PROJECT_ID is not set in environment variables')
 }
 
 export const sanityConfig = {
@@ -22,9 +14,26 @@ export const sanityConfig = {
   apiVersion,
   // Use CDN: false to always get fresh data from Sanity
   useCdn: false,
+  // Enable request deduplication
+  requestTaggers: ['articles'],
 }
 
 export const client = createClient(sanityConfig)
+
+// Image URL helper with optimization
+export function imageUrlFor(source: any, options?: { width?: number; height?: number; quality?: number }) {
+  if (!source?.asset?._ref) return null
+  
+  const { width = 800, height, quality = 80 } = options || {}
+  const imageId = source.asset._ref.split('-')[1]
+  const extension = source.asset._ref.split('-')[3]
+  
+  let url = `https://cdn.sanity.io/images/${projectId}/${dataset}/${imageId}.${extension}?w=${width}&q=${quality}`
+  if (height) url += `&h=${height}`
+  url += '&auto=format'
+  
+  return url
+}
 
 export async function sanityFetch<QueryResponse>({
   query,
@@ -46,8 +55,6 @@ export async function sanityFetch<QueryResponse>({
       query: query.substring(0, 100) + '...',
       params,
       error,
-      projectId,
-      dataset,
     })
     throw error
   }

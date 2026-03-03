@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowLeft, Calendar, Clock, Share2, Bookmark, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PortableText } from '@portabletext/react'
-import { sanityFetch, type Article } from '@/lib/sanity'
+import { sanityFetch, type Article, imageUrlFor } from '@/lib/sanity'
 import imageUrlBuilder from '@sanity/image-url'
 import { client } from '@/lib/sanity'
 import { SubscriptionForm } from '@/components/subscription-form'
@@ -254,9 +254,10 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
         {article.imageUrl && (
           <div className="aspect-video w-full rounded-2xl mb-8 sm:mb-12 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
             <img
-              src={article.imageUrl}
-              alt={article.title}
+              src={imageUrlFor(article.mainImage, { width: 1200, height: 675, quality: 85 }) || article.imageUrl}
+              alt={article.mainImage?.alt || article.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         )}
