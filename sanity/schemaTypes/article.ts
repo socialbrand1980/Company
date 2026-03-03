@@ -100,9 +100,6 @@ export const article = defineType({
       title: 'Related Articles',
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'article' }] }],
-      options: {
-        disableNew: true,
-      },
     }),
   ],
   preview: {
