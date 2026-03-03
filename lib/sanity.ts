@@ -38,9 +38,7 @@ export interface Article {
   _createdAt: string
   _updatedAt: string
   title: string
-  slug: {
-    current: string
-  }
+  slug: string  // Changed from { current: string } to string
   excerpt: string
   content: any[]
   category: string

@@ -38,12 +38,19 @@ const ARTICLE_QUERY = `*[_type == "article" && slug.current == $slug][0] {
 
 export function ArticleDetail() {
   const params = useParams()
-  const slug = params.slug as string
+  const slug = params?.slug as string | undefined
 
   const [article, setArticle] = React.useState<Article | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
+    if (!slug) {
+      setError('No slug provided')
+      setLoading(false)
+      return
+    }
+
     async function fetchArticle() {
       try {
         const fetched = await sanityFetch<Article | null>({
@@ -51,8 +58,9 @@ export function ArticleDetail() {
           params: { slug },
         })
         setArticle(fetched)
-      } catch (error) {
-        console.error('Error fetching article:', error)
+      } catch (err) {
+        console.error('Error fetching article:', err)
+        setError('Failed to load article')
         setArticle(null)
       } finally {
         setLoading(false)
@@ -74,12 +82,12 @@ export function ArticleDetail() {
     )
   }
 
-  if (!currentArticle) {
+  if (error || !currentArticle) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
-          <p className="text-muted-foreground mb-6">Article not found</p>
+          <p className="text-muted-foreground mb-6">{error || 'Article not found'}</p>
           <Button asChild className="neon-btn text-white">
             <Link href="/article">Back to Articles</Link>
           </Button>
