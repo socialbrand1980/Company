@@ -2,12 +2,9 @@
 
 import React from "react"
 import Link from "next/link"
-import { Calendar, Clock, ArrowRight, TrendingUp, Users2, Zap, Currency, Network } from "lucide-react"
+import { Calendar, Clock, ArrowRight, TrendingUp, Users2, Zap } from "lucide-react"
 import { sanityFetch, type Article } from '@/lib/sanity'
 import { SubscriptionForm } from '@/components/subscription-form'
-import { performance } from "perf_hooks"
-import { Global } from "recharts"
-import { StudioAnnouncementsDialog } from "sanity"
 
 const ARTICLES_QUERY = `*[_type == "article" && defined(slug.current)] | order(publishedAt desc, featured desc) {
   _id,
@@ -30,9 +27,6 @@ const CATEGORIES = [
   { name: "Brand Strategy", icon: TrendingUp },
   { name: "Social Media", icon: Users2 },
   { name: "Content Marketing", icon: Calendar },
-  { name: "Paid Advertising", icon: Currency },
-  { name: "Branding", icon: TrendingUp },
-  { name: "Influencer Marketing", icon: Network },
 ]
 
 export function ArticleList() {
