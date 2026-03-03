@@ -101,10 +101,7 @@ export const article = defineType({
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'article' }] }],
       options: {
-        filter: ({ document }) => ({
-          filter: '_id != $id',
-          params: { id: document._id },
-        }),
+        disableNew: true,
       },
     }),
   ],
