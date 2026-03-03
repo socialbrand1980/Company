@@ -44,6 +44,8 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
   const [article, setArticle] = React.useState<Article | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [isSaved, setIsSaved] = React.useState(false)
+  const [showSaveToast, setShowSaveToast] = React.useState(false)
 
   React.useEffect(() => {
     if (!slug) {
@@ -59,13 +61,19 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
           query: ARTICLE_QUERY,
           params: { slug },
         })
-        
+
         console.log('Article fetched:', fetched ? fetched.title : 'null')
-        
+
         if (!fetched) {
           setError('Article not found')
         }
         setArticle(fetched)
+        
+        // Check if article is saved
+        if (fetched) {
+          const savedArticles = JSON.parse(localStorage.getItem('savedArticles') || '[]')
+          setIsSaved(savedArticles.includes(fetched._id))
+        }
       } catch (err) {
         console.error('Error fetching article:', err)
         setError('Failed to load article')
@@ -75,6 +83,70 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
     }
     fetchArticle()
   }, [slug])
+
+  // Share function
+  const handleShare = async () => {
+    if (!article) return
+    
+    const shareData = {
+      title: article.title,
+      text: article.excerpt,
+      url: window.location.href,
+    }
+
+    // Try native share first
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        console.log('Share canceled')
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        alert('Link copied to clipboard!')
+      } catch (err) {
+        console.error('Failed to copy:', err)
+      }
+    }
+  }
+
+  // Save function
+  const handleSave = () => {
+    if (!article) return
+    
+    const savedArticles = JSON.parse(localStorage.getItem('savedArticles') || '[]')
+    
+    if (isSaved) {
+      // Remove from saved
+      const updated = savedArticles.filter((id: string) => id !== article._id)
+      localStorage.setItem('savedArticles', JSON.stringify(updated))
+      setIsSaved(false)
+    } else {
+      // Add to saved
+      savedArticles.push(article._id)
+      localStorage.setItem('savedArticles', JSON.stringify(savedArticles))
+      setIsSaved(true)
+      setShowSaveToast(true)
+      setTimeout(() => setShowSaveToast(false), 3000)
+    }
+  }
+
+  // Discuss function (WhatsApp)
+  const handleDiscuss = () => {
+    if (!article) return
+    
+    const message = encodeURIComponent(
+      `Hi! I'd like to discuss this article:\n\n` +
+      `"${article.title}"\n\n` +
+      `${window.location.href}\n\n` +
+      `Let's talk about it!`
+    )
+    
+    const waUrl = `https://wa.me/62811198093?text=${message}`
+    window.open(waUrl, '_blank')
+  }
 
   if (loading) {
     return (
@@ -149,15 +221,30 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
 
           <div className="flex items-center gap-3 pt-6 flex-wrap">
             <SubscriptionForm articleTitle={article.title} articleSlug={article.slug} />
-            <Button variant="outline" size="sm" className="neon-border bg-transparent">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="neon-border bg-transparent"
+              onClick={handleShare}
+            >
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
-            <Button variant="outline" size="sm" className="neon-border bg-transparent">
-              <Bookmark className="h-4 w-4 mr-2" />
-              Save
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`neon-border bg-transparent ${isSaved ? 'bg-primary/20 border-primary' : ''}`}
+              onClick={handleSave}
+            >
+              <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? 'fill-primary text-primary' : ''}`} />
+              {isSaved ? 'Saved' : 'Save'}
             </Button>
-            <Button variant="outline" size="sm" className="neon-border bg-transparent">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="neon-border bg-transparent"
+              onClick={handleDiscuss}
+            >
               <MessageCircle className="h-4 w-4 mr-2" />
               Discuss
             </Button>
@@ -226,6 +313,29 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
           </div>
         )}
       </div>
+
+      {/* Save Toast Notification */}
+      {showSaveToast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="glass-card rounded-xl px-6 py-4 flex items-center gap-3 border border-primary/50">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <Bookmark className="h-4 w-4 fill-primary text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground text-sm">Article Saved!</p>
+              <p className="text-xs text-muted-foreground">Find it in your saved articles</p>
+            </div>
+            <button
+              onClick={() => setShowSaveToast(false)}
+              className="ml-4 p-1 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   )
 }
