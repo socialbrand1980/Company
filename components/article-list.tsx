@@ -140,23 +140,23 @@ export function ArticleList() {
           </div>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12">
+        {/* Category Filter - Horizontal Scroll */}
+        <div className="scrollable-categories mb-8 sm:mb-12 px-4 sm:px-0">
           {CATEGORIES.map((category) => (
             <button
               key={category.name}
               type="button"
               onClick={() => setActiveCategory(category.name)}
               className={`
-                inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300
+                inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
                 ${activeCategory === category.name
                   ? "neon-btn text-white"
                   : "glass-card text-muted-foreground hover:text-foreground hover:scale-105"
                 }
               `}
             >
-              <category.icon className="h-4 w-4" />
-              {category.name}
+              <category.icon className="h-4 w-4 flex-shrink-0" />
+              <span>{category.name}</span>
             </button>
           ))}
         </div>
