@@ -141,7 +141,7 @@ export function ArticleList() {
         </div>
 
         {/* Category Filter - Horizontal Scroll */}
-        <div className="mb-20 sm:mb-28 lg:mb-32">
+        <div className="mb-12 sm:mb-16 lg:mb-20">
           <div className="scrollable-categories">
             {CATEGORIES.map((category) => (
               <button
