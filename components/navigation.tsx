@@ -3,6 +3,7 @@
 import React from "react"
 import { useState, useCallback, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -19,6 +20,8 @@ const navLinks = [
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const pathname = usePathname()
+  const isHomePage = pathname === "/"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +32,8 @@ export function Navigation() {
   }, [])
 
   const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!isHomePage) return
+    
     e.preventDefault()
     const targetId = href.replace("#", "")
     const element = document.getElementById(targetId)
@@ -40,15 +45,15 @@ export function Navigation() {
       })
     }
     setIsOpen(false)
-  }, [])
+  }, [isHomePage])
 
   return (
-    <header 
+    <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        scrolled 
-          ? "glass border-b border-border/50" 
-          : "bg-transparent"
+        scrolled || !isHomePage
+          ? "glass border-b border-border/50 bg-black/80 backdrop-blur-xl"
+          : "bg-black/40 backdrop-blur-md"
       )}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,7 +67,7 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
-              link.isExternal ? (
+              link.isExternal || !isHomePage ? (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -105,7 +110,7 @@ export function Navigation() {
           <div className="md:hidden glass rounded-2xl mt-2 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                link.isExternal ? (
+                link.isExternal || !isHomePage ? (
                   <Link
                     key={link.href}
                     href={link.href}
