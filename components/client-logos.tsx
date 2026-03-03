@@ -43,8 +43,18 @@ export function ClientLogos() {
   const allClients = [...clients, ...clients, ...clients]
 
   return (
-    <section className="py-8 sm:py-12 overflow-hidden">
+    <section className="py-10 sm:py-14 overflow-hidden">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-8 sm:mb-10">
+          <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-2 neon-text">
+            Trusted By
+          </p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            Our Trusted Partners
+          </h2>
+        </div>
+
         {/* Running Client Logos - Infinite Loop */}
         <div className="relative w-full">
           {/* Gradient fade on edges */}
@@ -63,7 +73,7 @@ export function ClientLogos() {
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-14 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
@@ -80,7 +90,7 @@ export function ClientLogos() {
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-14 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
@@ -97,7 +107,7 @@ export function ClientLogos() {
                   <img
                     src={client.clientLogoUrl}
                     alt={client.clientName}
-                    className="h-12 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
+                    className="h-14 sm:h-16 lg:h-20 w-auto object-contain filter grayscale hover:grayscale-0"
                     loading="lazy"
                   />
                 </div>
