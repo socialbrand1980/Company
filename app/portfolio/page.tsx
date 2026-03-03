@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { Calendar, ArrowRight, Compass, MessageSquare, Camera, Users2, Target, Layers, Zap } from "lucide-react"
+import { Calendar, ArrowRight, Compass, MessageSquare, Camera, Users2, Target, Layers, Zap, TrendingUp } from "lucide-react"
 import { sanityFetch, type Portfolio } from '@/lib/sanity'
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
