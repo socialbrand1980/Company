@@ -128,7 +128,7 @@ const deliverables = [
 ]
 
 export function GrowthFramework() {
-  const [activeNode, setActiveNode] = useState<number | null>(1)
+  const [activeNode, setActiveNode] = useState<number | null>(null)
 
   return (
     <section id="process" className="relative py-24 sm:py-32 lg:py-40 scroll-mt-20 overflow-hidden">
@@ -160,218 +160,145 @@ export function GrowthFramework() {
           </div>
         </div>
 
-        {/* Interactive Framework */}
+        {/* Interactive Framework - Minimalist */}
         <div className="mb-24 sm:mb-32">
-          {/* Framework Container */}
-          <div className="relative">
-            {/* Desktop: Horizontal Layout */}
-            <div className="hidden lg:block">
-              {/* Connection Line */}
-              <div className="absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-sm" />
-              </div>
-              
-              {/* Nodes */}
-              <div className="grid grid-cols-5 gap-4 relative z-10">
-                {frameworkNodes.map((node, index) => {
-                  const Icon = node.icon
-                  const isActive = activeNode === node.id
-                  
-                  return (
-                    <div key={node.id} className="relative">
-                      {/* Node Button */}
-                      <button
-                        onClick={() => setActiveNode(node.id)}
-                        className={`group relative flex flex-col items-center w-full transition-all duration-500 ${
-                          isActive ? "scale-110" : "hover:scale-105"
-                        }`}
-                      >
-                        {/* Icon Container */}
-                        <div className={`relative w-32 h-32 rounded-2xl bg-gradient-to-br ${node.color} p-0.5 transition-all duration-500 ${
-                          isActive ? "shadow-2xl shadow-blue-500/30" : "shadow-lg"
-                        }`}>
-                          <div className="w-full h-full rounded-2xl bg-black/90 backdrop-blur-xl flex items-center justify-center">
-                            <Icon className={`w-12 h-12 transition-all duration-500 ${
-                              isActive ? "text-white scale-110" : "text-white/70 group-hover:text-white"
-                            }`} />
-                          </div>
-                          
-                          {/* Glow Effect */}
-                          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${node.color} opacity-0 transition-opacity duration-500 ${
-                            isActive ? "opacity-30 blur-xl" : "group-hover:opacity-20 group-hover:blur-lg"
-                          }`} />
-                        </div>
-                        
-                        {/* Timeline */}
-                        <div className="mt-4 text-center">
-                          <p className={`text-sm font-semibold transition-colors duration-300 ${
-                            isActive ? "text-white" : "text-muted-foreground"
-                          }`}>
-                            {node.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">{node.timeline}</p>
-                        </div>
-                        
-                        {/* Active Indicator */}
-                        {isActive && (
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50" />
-                        )}
-                      </button>
+          {/* Desktop: Horizontal Layout */}
+          <div className="hidden lg:block">
+            {/* Nodes */}
+            <div className="grid grid-cols-5 gap-4 relative z-10">
+              {frameworkNodes.map((node, index) => {
+                const Icon = node.icon
+                const isActive = activeNode === node.id
+                
+                return (
+                  <button
+                    key={node.id}
+                    onClick={() => setActiveNode(isActive ? null : node.id)}
+                    className="group relative flex flex-col items-center w-full transition-all duration-500 ease-out"
+                  >
+                    {/* Icon Circle with Glow */}
+                    <div className={`relative w-16 h-16 rounded-full transition-all duration-500 ease-out ${
+                      isActive 
+                        ? `bg-gradient-to-br ${node.color} shadow-lg shadow-blue-500/50 scale-110`
+                        : "bg-black/80 border border-blue-500/20 group-hover:border-blue-500/50 group-hover:shadow-md group-hover:shadow-blue-500/30"
+                    }`}>
+                      <Icon className={`w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out ${
+                        isActive ? "text-white scale-110" : "text-blue-400 group-hover:text-blue-300"
+                      }`} />
                       
-                      {/* Connector Dots */}
-                      {index < frameworkNodes.length - 1 && (
-                        <div className="absolute top-16 -right-2 w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-2 border-black" />
+                      {/* Active Glow Effect */}
+                      {isActive && (
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${node.color} blur-lg opacity-60 animate-pulse`} style={{ animationDuration: '3s' }} />
+                      )}
+                      
+                      {/* Outer Ring for inactive */}
+                      {!isActive && (
+                        <div className="absolute inset-0 rounded-full border border-blue-500/20 transition-all duration-500 ease-out" />
                       )}
                     </div>
-                  )
-                })}
-              </div>
-              
-              {/* Floating Content Panel */}
-              {activeNode && (
-                <div className="mt-16 glass-card rounded-2xl p-8 border border-border/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    
+                    {/* Label */}
+                    <div className="mt-4 text-center">
+                      <p className={`text-sm font-medium transition-all duration-500 ease-out ${
+                        isActive ? "text-white" : "text-muted-foreground group-hover:text-blue-300"
+                      }`}>
+                        {node.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{node.timeline}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+            
+            {/* Content Panel - Minimalist with Smooth Animation */}
+            {activeNode && (
+              <div className="mt-16 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+                <div className="glass-card rounded-2xl p-8 border border-blue-500/20">
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {frameworkNodes.find(n => n.id === activeNode)?.content.map((item, index) => {
                       const ItemIcon = item.icon
                       return (
                         <div
                           key={index}
-                          className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-border/30 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-500/5 transition-all duration-300 ease-out"
                         >
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
-                            <ItemIcon className="w-5 h-5 text-primary" />
-                          </div>
-                          <span className="text-sm text-foreground">{item.text}</span>
+                          <ItemIcon className="w-5 h-5 text-blue-400 flex-shrink-0 transition-transform duration-300 ease-out hover:scale-110" />
+                          <span className="text-sm text-blue-100">{item.text}</span>
                         </div>
                       )
                     })}
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {/* Mobile: Vertical Layout */}
-            <div className="lg:hidden space-y-6">
-              {frameworkNodes.map((node) => {
-                const Icon = node.icon
-                const isActive = activeNode === node.id
-                
-                return (
-                  <div key={node.id} className="relative">
-                    <button
-                      onClick={() => setActiveNode(node.id)}
-                      className={`group w-full flex items-start gap-4 p-4 rounded-2xl transition-all duration-300 ${
-                        isActive 
-                          ? "glass-card border border-primary/50" 
-                          : "glass-card border border-border/30 hover:border-primary/30"
-                      }`}
-                    >
-                      {/* Icon */}
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${node.color} p-0.5 flex-shrink-0`}>
-                        <div className="w-full h-full rounded-xl bg-black/90 backdrop-blur-xl flex items-center justify-center">
-                          <Icon className={`w-7 h-7 transition-all duration-300 ${
-                            isActive ? "text-white scale-110" : "text-white/70 group-hover:text-white"
-                          }`} />
-                        </div>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="flex-1 text-left">
-                        <p className={`text-base font-semibold transition-colors duration-300 ${
-                          isActive ? "text-white" : "text-foreground"
-                        }`}>
-                          {node.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">{node.timeline}</p>
-                        
-                        {/* Expanded Content */}
-                        {isActive && (
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            {node.content.map((item, index) => {
-                              const ItemIcon = item.icon
-                              return (
-                                <div
-                                  key={index}
-                                  className="flex items-center gap-2 text-sm text-muted-foreground"
-                                >
-                                  <ItemIcon className="w-4 h-4 text-primary flex-shrink-0" />
-                                  <span>{item.text}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Arrow */}
-                      <ArrowRight className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${
-                        isActive ? "rotate-90" : ""
-                      }`} />
-                    </button>
-                    
-                    {/* Connection Line */}
-                    {node.id < frameworkNodes.length && (
-                      <div className="absolute left-10 top-20 w-0.5 h-6 bg-gradient-to-b from-blue-500/50 to-transparent" />
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Timeline Section */}
-        <div className="mb-24 sm:mb-32">
-          <div className="text-center mb-12">
-            <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              From Week 1 to Ongoing Growth
-            </h3>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our structured timeline ensures every brand gets the attention and strategy they need for sustainable growth.
-            </p>
+              </div>
+            )}
           </div>
           
-          <div className="relative">
-            {/* Timeline Line */}
-            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500" />
-            
-            {/* Timeline Items */}
-            <div className="space-y-8 lg:space-y-0">
-              {frameworkNodes.map((node, index) => {
-                const isLeft = index % 2 === 0
-                const Icon = node.icon
-                
-                return (
-                  <div
-                    key={node.id}
-                    className={`relative lg:flex items-center gap-8 ${
-                      isLeft ? "lg:flex-row" : "lg:flex-row-reverse"
-                    }`}
-                  >
-                    {/* Content */}
-                    <div className={`flex-1 ${isLeft ? "lg:text-right" : "lg:text-left"} pl-20 lg:pl-0`}>
-                      <div className="glass-card rounded-2xl p-6 border border-border/30">
-                        <div className={`flex items-center gap-3 mb-3 ${isLeft ? "lg:flex-row-reverse" : ""}`}>
-                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${node.color} p-0.5`}>
-                            <div className="w-full h-full rounded-lg bg-black/90 backdrop-blur-xl flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-white" />
-                            </div>
-                          </div>
-                          <h4 className="text-lg font-semibold text-foreground">{node.title}</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{node.timeline}</p>
-                      </div>
+          {/* Mobile: Vertical Layout with Smooth Animation */}
+          <div className="lg:hidden space-y-4">
+            {frameworkNodes.map((node) => {
+              const Icon = node.icon
+              const isActive = activeNode === node.id
+              
+              return (
+                <button
+                  key={node.id}
+                  onClick={() => setActiveNode(isActive ? null : node.id)}
+                  className="group w-full glass-card rounded-xl p-4 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-500 ease-out"
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Icon with Blue Glow */}
+                    <div className={`relative w-14 h-14 rounded-full transition-all duration-500 ease-out flex-shrink-0 ${
+                      isActive 
+                        ? `bg-gradient-to-br ${node.color} shadow-lg shadow-blue-500/50 scale-110`
+                        : "bg-black/80 border border-blue-500/30"
+                    }`}>
+                      <Icon className={`w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out ${
+                        isActive ? "text-white scale-110" : "text-blue-400"
+                      }`} />
+                      
+                      {/* Glow Effect */}
+                      {isActive && (
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${node.color} blur-lg opacity-60 animate-pulse`} style={{ animationDuration: '3s' }} />
+                      )}
                     </div>
                     
-                    {/* Center Dot */}
-                    <div className="absolute left-8 lg:left-1/2 lg:-translate-x-1/2 top-8 w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-4 border-black shadow-lg shadow-blue-500/50" />
+                    {/* Label */}
+                    <div className="flex-1 text-left">
+                      <p className={`text-sm font-medium transition-all duration-500 ease-out ${
+                        isActive ? "text-white" : "text-blue-100"
+                      }`}>
+                        {node.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{node.timeline}</p>
+                    </div>
                     
-                    {/* Empty Space */}
-                    <div className="flex-1 hidden lg:block" />
+                    {/* Arrow */}
+                    <ArrowRight className={`w-4 h-4 transition-all duration-500 ease-out ${
+                      isActive ? "rotate-90 text-blue-400" : "text-blue-400"
+                    }`} />
                   </div>
-                )
-              })}
-            </div>
+                  
+                  {/* Expanded Content with Smooth Animation */}
+                  {isActive && (
+                    <div className="mt-4 pt-4 border-t border-blue-500/20 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-500 ease-out">
+                      {node.content.map((item, index) => {
+                        const ItemIcon = item.icon
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 text-xs text-blue-100"
+                          >
+                            <ItemIcon className="w-4 h-4 text-blue-400 flex-shrink-0 transition-transform duration-300 ease-out hover:scale-110" />
+                            <span>{item.text}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -392,11 +319,11 @@ export function GrowthFramework() {
               return (
                 <div
                   key={index}
-                  className="glass-card rounded-2xl p-6 sm:p-8 border border-border/30 hover:border-primary/50 transition-all duration-500 hover:scale-[1.02]"
+                  className="glass-card rounded-2xl p-6 sm:p-8 border border-border/30 hover:border-white/40 transition-all duration-300"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-6">
-                    <Icon className="w-7 h-7 text-primary" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center mb-6">
+                    <Icon className="w-6 h-6 text-primary" />
                   </div>
                   
                   <h4 className="text-xl font-semibold text-foreground mb-6">
