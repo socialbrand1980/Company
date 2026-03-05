@@ -3,7 +3,7 @@ import { HeroSection } from "@/components/hero-section"
 import { AboutSection } from "@/components/about-section"
 import { ServicesSection } from "@/components/services-section"
 import { ClientLogos } from "@/components/client-logos"
-import { ProcessSection } from "@/components/process-section"
+import { GrowthFramework } from "@/components/growth-framework"
 import { WhyUsSection } from "@/components/why-us-section"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
@@ -17,7 +17,7 @@ export default function HomePage() {
         <ClientLogos />
         <AboutSection />
         <ServicesSection />
-        <ProcessSection />
+        <GrowthFramework />
         <WhyUsSection />
         <CTASection />
       </main>
