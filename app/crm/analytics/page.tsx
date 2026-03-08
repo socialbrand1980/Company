@@ -64,36 +64,36 @@ export default function CRMAnalyticsPage() {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const data: { [key: string]: MonthlyData } = {}
 
-    const startDate = dateRange.startDate
-    const endDate = dateRange.endDate
+    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null
+    const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null
+
+    // Set start of day for startDate
+    if (startDate) startDate.setHours(0, 0, 0, 0)
+    // Set end of day for endDate
+    if (endDate) endDate.setHours(23, 59, 59, 999)
 
     leads.forEach((lead: Lead) => {
       if (lead.leadstatus !== 'Closed Won') return
       
-      const leadDate = new Date(lead.timestamp || Date.now())
+      const leadDate = new Date(lead.timestamp)
       leadDate.setHours(0, 0, 0, 0)
       
-      // Filter by date range (only if dates are set)
-      if (startDate) {
-        const start = new Date(startDate)
-        start.setHours(0, 0, 0, 0)
-        if (leadDate < start) return
-      }
-      if (endDate) {
-        const end = new Date(endDate)
-        end.setHours(23, 59, 59, 999)
-        if (leadDate > end) return
-      }
+      // Filter by date range
+      if (startDate && leadDate < startDate) return
+      if (endDate && leadDate > endDate) return
       
       const year = leadDate.getFullYear()
       const month = leadDate.getMonth()
       const day = leadDate.getDate()
       
-      // Group by day if range is small, otherwise by month
+      // Determine grouping based on date range
       let groupByDay = false
       if (startDate && endDate) {
         const rangeDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
         groupByDay = rangeDays <= 31
+      } else if (startDate && !endDate) {
+        // Only start date (e.g., "Today")
+        groupByDay = true
       }
       
       let key: string
