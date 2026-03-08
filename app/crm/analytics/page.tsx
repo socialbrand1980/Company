@@ -59,7 +59,6 @@ export default function CRMAnalyticsPage() {
 
   // Process revenue data based on selected date range
   useEffect(() => {
-    console.log('Processing analytics with date range:', dateRange)
     if (leads.length === 0) return
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -68,34 +67,22 @@ export default function CRMAnalyticsPage() {
     const startDate = dateRange.startDate
     const endDate = dateRange.endDate
 
-    console.log('Start date:', startDate)
-    console.log('End date:', endDate)
-    console.log('Total leads:', leads.length)
-    console.log('Closed Won leads:', leads.filter(l => l.leadstatus === 'Closed Won').length)
-
     leads.forEach((lead: Lead) => {
-      if (lead.leadstatus !== 'Closed Won') {
-        console.log('Skipping lead - not Closed Won:', lead.brandname, lead.leadstatus)
-        return
-      }
+      if (lead.leadstatus !== 'Closed Won') return
       
       const leadDate = new Date(lead.timestamp || Date.now())
-      console.log('Processing lead:', lead.brandname, 'date:', leadDate)
       
-      // Filter by date range
+      // Filter by date range (compare dates only, ignore time)
       if (startDate) {
-        startDate.setHours(0, 0, 0, 0)
-        if (leadDate < startDate) {
-          console.log('Skipping lead - before start date:', lead.brandname)
-          return
-        }
+        const start = new Date(startDate)
+        start.setHours(0, 0, 0, 0)
+        leadDate.setHours(0, 0, 0, 0)
+        if (leadDate < start) return
       }
       if (endDate) {
-        endDate.setHours(23, 59, 59, 999)
-        if (leadDate > endDate) {
-          console.log('Skipping lead - after end date:', lead.brandname)
-          return
-        }
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        if (leadDate > end) return
       }
       
       const year = leadDate.getFullYear()
@@ -134,7 +121,6 @@ export default function CRMAnalyticsPage() {
       data[key].value += budgetValue
       data[key].count += 1
       data[key].clients.push(lead.brandname || 'Unknown')
-      console.log('Added lead to data:', key, budgetValue)
     })
 
     const sortedData = Object.values(data).sort((a, b) => {
@@ -142,7 +128,6 @@ export default function CRMAnalyticsPage() {
       return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
-    console.log('Final data:', sortedData)
     setMonthlyData(sortedData)
   }, [leads, dateRange])
 
