@@ -23,25 +23,34 @@ function formatTimestamp(timestamp: any): string {
   try {
     let date: Date
     
-    // Try different parsing approaches
     if (typeof timestamp === 'number') {
       date = new Date(timestamp)
     } else {
       const dateStr = String(timestamp)
-      // Handle various string formats
+      
+      // Handle ISO format (from new submissions)
       if (dateStr.includes('T')) {
         date = new Date(dateStr)
-      } else if (dateStr.includes('/')) {
-        // Format: DD/MM/YYYY or MM/DD/YYYY
+      }
+      // Handle Google Sheets format: DD/MM/YYYY HH:MM:SS
+      else if (dateStr.includes('/') && dateStr.includes(':')) {
+        const parts = dateStr.split(' ')
+        const datePart = parts[0] // DD/MM/YYYY
+        const [day, month, year] = datePart.split('/')
+        date = new Date(`${year}-${month}-${day}`)
+      }
+      // Handle DD/MM/YYYY
+      else if (dateStr.includes('/')) {
         const parts = dateStr.split('/')
         if (parts.length === 3) {
-          // Assume DD/MM/YYYY
-          date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+          const [day, month, year] = parts
+          date = new Date(`${year}-${month}-${day}`)
         } else {
           date = new Date(dateStr)
         }
-      } else if (dateStr.includes('-')) {
-        // Format: YYYY-MM-DD or DD-MM-YYYY
+      }
+      // Handle YYYY-MM-DD or DD-MM-YYYY
+      else if (dateStr.includes('-')) {
         const parts = dateStr.split('-')
         if (parts.length === 3) {
           if (parts[0].length === 4) {
@@ -54,7 +63,9 @@ function formatTimestamp(timestamp: any): string {
         } else {
           date = new Date(dateStr)
         }
-      } else {
+      }
+      // Try direct parse
+      else {
         date = new Date(dateStr)
       }
     }

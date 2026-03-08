@@ -28,16 +28,30 @@ function formatTimestamp(timestamp: any): string {
       date = new Date(timestamp)
     } else {
       const dateStr = String(timestamp)
+      
+      // Handle ISO format (from new submissions)
       if (dateStr.includes('T')) {
         date = new Date(dateStr)
-      } else if (dateStr.includes('/')) {
+      }
+      // Handle Google Sheets format: DD/MM/YYYY HH:MM:SS
+      else if (dateStr.includes('/') && dateStr.includes(':')) {
+        const parts = dateStr.split(' ')
+        const datePart = parts[0] // DD/MM/YYYY
+        const [day, month, year] = datePart.split('/')
+        date = new Date(`${year}-${month}-${day}`)
+      }
+      // Handle DD/MM/YYYY
+      else if (dateStr.includes('/')) {
         const parts = dateStr.split('/')
         if (parts.length === 3) {
-          date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+          const [day, month, year] = parts
+          date = new Date(`${year}-${month}-${day}`)
         } else {
           date = new Date(dateStr)
         }
-      } else if (dateStr.includes('-')) {
+      }
+      // Handle YYYY-MM-DD or DD-MM-YYYY
+      else if (dateStr.includes('-')) {
         const parts = dateStr.split('-')
         if (parts.length === 3) {
           if (parts[0].length === 4) {
@@ -48,7 +62,9 @@ function formatTimestamp(timestamp: any): string {
         } else {
           date = new Date(dateStr)
         }
-      } else {
+      }
+      // Try direct parse
+      else {
         date = new Date(dateStr)
       }
     }
