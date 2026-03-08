@@ -61,7 +61,7 @@ export default function CRMLayout({ children }: CRMLayoutProps) {
               <span className="text-white font-bold text-sm">SB</span>
             </div>
             {sidebarOpen && (
-              <span className="text-white font-semibold text-lg">SocialBrand</span>
+              <span className="text-white font-semibold text-lg">SocialBrand1980</span>
             )}
           </div>
           <button 

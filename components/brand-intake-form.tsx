@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { CheckCircle2, Loader2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatIDR } from "@/lib/format-currency"
 
 interface FormData {
   // Brand Information
@@ -86,13 +87,6 @@ const channelOptions = [
   "Email Marketing",
   "Organic Social Media",
   "None"
-]
-
-const budgetOptions = [
-  "Rp5.000.000 – Rp15.000.000",
-  "Rp15.000.000 – Rp50.000.000",
-  "Rp50.000.000 – Rp150.000.000",
-  "Rp150.000.000+"
 ]
 
 const timelineOptions = [
@@ -358,23 +352,27 @@ export function BrandIntakeForm() {
           <span className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">4</span>
           Budget & Timeline
         </h3>
-        
+
         <div className="grid sm:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="text-sm font-medium text-foreground mb-3 block">Estimated Monthly Marketing Budget *</label>
-            <select
-              value={formData.budget}
-              onChange={(e) => handleInputChange('budget', e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
-              required
-            >
-              <option value="">Select budget range</option>
-              {budgetOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
+            <label className="text-sm font-medium text-foreground mb-2 block">Monthly Budget (Rp) *</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">Rp</span>
+              <input
+                type="text"
+                value={formData.budget ? formatIDR(formData.budget) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '')
+                  handleInputChange('budget', value)
+                }}
+                className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                placeholder="5.000.000"
+                required
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Masukkan budget marketing bulanan Anda (contoh: 5000000)</p>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium text-foreground mb-3 block">Project Timeline *</label>
             <select
