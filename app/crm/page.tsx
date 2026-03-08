@@ -18,21 +18,29 @@ import { formatCompactIDR } from "@/lib/format-currency"
 
 // Helper function to format timestamp - simple DD/MM/YYYY format
 function formatTimestamp(timestamp: any): string {
-  if (!timestamp) return 'N/A'
+  console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp, 'isDate:', timestamp instanceof Date)
+  
+  if (!timestamp) {
+    console.log('No timestamp, returning N/A')
+    return 'N/A'
+  }
   
   try {
     let date: Date
     
     // If it's already a Date object (from Google Sheets)
     if (timestamp instanceof Date) {
+      console.log('Using Date object directly')
       date = timestamp
     }
     // If it's a number (Unix timestamp)
     else if (typeof timestamp === 'number') {
+      console.log('Parsing as number')
       date = new Date(timestamp)
     }
     // If it's a string
     else {
+      console.log('Parsing as string')
       const dateStr = String(timestamp)
       
       // Handle ISO format (from new submissions)
@@ -61,10 +69,8 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split('-')
         if (parts.length === 3) {
           if (parts[0].length === 4) {
-            // YYYY-MM-DD
             date = new Date(dateStr)
           } else {
-            // DD-MM-YYYY
             date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
           }
         } else {
@@ -77,7 +83,10 @@ function formatTimestamp(timestamp: any): string {
       }
     }
     
+    console.log('Parsed date:', date, 'isValid:', !isNaN(date.getTime()))
+    
     if (isNaN(date.getTime())) {
+      console.log('Invalid date, returning N/A')
       return 'N/A'
     }
     
@@ -85,9 +94,12 @@ function formatTimestamp(timestamp: any): string {
     const day = String(date.getDate()).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const year = date.getFullYear()
+    const result = `${day}/${month}/${year}`
     
-    return `${day}/${month}/${year}`
-  } catch {
+    console.log('Formatted result:', result)
+    return result
+  } catch (e) {
+    console.log('Error in formatTimestamp:', e)
     return 'N/A'
   }
 }
