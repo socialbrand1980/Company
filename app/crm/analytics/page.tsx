@@ -69,16 +69,12 @@ export default function CRMAnalyticsPage() {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const data: { [key: string]: MonthlyData } = {}
 
-    const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null
-    const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null
+    // Convert to timestamps for comparison
+    const startTimestamp = dateRange.startDate ? new Date(dateRange.startDate).setHours(0, 0, 0, 0) : null
+    const endTimestamp = dateRange.endDate ? new Date(dateRange.endDate).setHours(23, 59, 59, 999) : null
 
-    console.log('Start date:', startDate)
-    console.log('End date:', endDate)
-
-    // Set start of day for startDate
-    if (startDate) startDate.setHours(0, 0, 0, 0)
-    // Set end of day for endDate
-    if (endDate) endDate.setHours(23, 59, 59, 999)
+    console.log('Start timestamp:', startTimestamp, new Date(startTimestamp || 0))
+    console.log('End timestamp:', endTimestamp, new Date(endTimestamp || 0))
 
     let filteredCount = 0
     
@@ -87,17 +83,18 @@ export default function CRMAnalyticsPage() {
         return
       }
 
+      // Get lead date and convert to timestamp at midnight
       const leadDate = new Date(lead.timestamp)
-      const leadDateOnly = new Date(leadDate.getFullYear(), leadDate.getMonth(), leadDate.getDate())
+      const leadTimestamp = new Date(leadDate.getFullYear(), leadDate.getMonth(), leadDate.getDate()).getTime()
       
-      console.log('Lead:', lead.brandname, 'Status:', lead.leadstatus, 'Date:', leadDateOnly, 'Budget:', lead.budget)
+      console.log('Lead:', lead.brandname, 'Status:', lead.leadstatus, 'Lead timestamp:', leadTimestamp, new Date(leadTimestamp))
 
-      // Filter by date range
-      if (startDate && leadDateOnly < startDate) {
+      // Filter by date range using timestamps
+      if (startTimestamp !== null && leadTimestamp < startTimestamp) {
         console.log('  → Skipped: Before start date')
         return
       }
-      if (endDate && leadDateOnly > endDate) {
+      if (endTimestamp !== null && leadTimestamp > endTimestamp) {
         console.log('  → Skipped: After end date')
         return
       }
@@ -111,13 +108,13 @@ export default function CRMAnalyticsPage() {
 
       // Determine grouping based on date range
       let groupByDay = false
-      if (startDate && endDate) {
-        const rangeDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      if (startTimestamp !== null && endTimestamp !== null) {
+        const rangeDays = Math.ceil((endTimestamp - startTimestamp) / (1000 * 60 * 60 * 24))
         groupByDay = rangeDays <= 31
-      } else if (startDate && !endDate) {
+      } else if (startTimestamp !== null && endTimestamp === null) {
         // Only start date (e.g., "Today")
         groupByDay = true
-      } else if (!startDate && !endDate) {
+      } else if (startTimestamp === null && endTimestamp === null) {
         // All time - group by month
         groupByDay = false
       }
