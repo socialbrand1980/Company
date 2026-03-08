@@ -371,95 +371,25 @@ export default function CRMAnalyticsPage() {
       return acc
     }, {})
 
-  const exportData = async () => {
-    try {
-      console.log('📥 Exporting report...')
-      
-      // Get filtered leads based on current date range
-      const filteredLeads = leads.filter((lead: Lead) => {
-        // Parse timestamp from Google Sheets format
-        let leadDate: Date
-        
-        if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
-          const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
-          if (match) {
-            const [, year, month, day, hour, minute, second] = match
-            leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
-          } else {
-            leadDate = new Date(lead.timestamp)
-          }
-        } else {
-          leadDate = new Date(lead.timestamp)
-        }
-        
-        if (isNaN(leadDate.getTime())) return true
-        
-        if (!dateRange.startDate && !dateRange.endDate) return true
-        
-        if (dateRange.startDate) {
-          const start = new Date(dateRange.startDate)
-          start.setHours(0, 0, 0, 0)
-          if (leadDate < start) return false
-        }
-        if (dateRange.endDate) {
-          const end = new Date(dateRange.endDate)
-          end.setHours(23, 59, 59, 999)
-          if (leadDate > end) return false
-        }
-        
-        return true
-      })
+  const exportData = () => {
+    // Export funnel data as CSV
+    const headers = ['Stage', 'Count', 'Percentage']
+    const rows = funnelData.map(data => [data.stage, data.count, `${data.percentage.toFixed(1)}%`])
 
-      console.log('Filtered leads for export:', filteredLeads.length)
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n')
 
-      const response = await fetch('/api/export-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leads: filteredLeads,
-          dateRange: dateRange,
-          stats: stats
-        }),
-      })
-
-      if (response.ok) {
-        // Create download link
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        
-        // Generate filename with date
-        const dateStr = new Date().toLocaleDateString('id-ID', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric' 
-        }).replace(/\//g, '-')
-        
-        a.download = `socialbrand1980-analytics-report-${dateStr}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        console.log('✅ Report downloaded successfully')
-        alert('✅ Report generated successfully! Check your downloads folder.')
-      } else {
-        const error = await response.json()
-        console.error('Export failed:', error)
-        
-        // Show detailed error message
-        let errorMsg = 'Failed to export report. '
-        if (error.error) errorMsg += `\n\nError: ${error.error}`
-        if (error.message) errorMsg += `\nMessage: ${error.message}`
-        if (error.stderr) errorMsg += `\n\nDetails: ${error.stderr}`
-        
-        alert(errorMsg)
-      }
-    } catch (error) {
-      console.error('Export error:', error)
-      alert('Failed to export report. Please try again.')
-    }
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `crm-analytics-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    console.log('✅ CSV exported successfully')
   }
 
   if (loading) {
