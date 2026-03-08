@@ -262,9 +262,9 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 flex glass-card rounded-xl shadow-2xl border border-white/[0.08] z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 flex bg-[#0d0d12]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/[0.12] z-50 overflow-hidden">
           {/* Sidebar Presets */}
-          <div className="w-44 border-r border-white/[0.08] p-2">
+          <div className="w-44 border-r border-white/[0.12] p-2 bg-[#0a0a0f]/50">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
               Quick Filters
             </div>
@@ -274,8 +274,8 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
                 onClick={() => handlePresetSelect(preset.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   selectedPreset === preset.id
-                    ? "bg-blue-500/10 text-blue-400"
-                    : "text-white hover:bg-white/[0.05]"
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    : "text-white hover:bg-white/[0.08]"
                 }`}
               >
                 {selectedPreset === preset.id && (
@@ -287,7 +287,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
           </div>
 
           {/* Calendar Panel */}
-          <div className="w-72 p-4">
+          <div className="w-72 p-4 bg-[#0a0a0f]/30">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               {selectedPreset === "custom" ? "Select Date Range" : "Calendar View"}
             </div>
@@ -296,7 +296,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                className="p-1 hover:bg-white/[0.05] rounded transition-colors"
+                className="p-1 hover:bg-white/[0.1] rounded transition-colors"
               >
                 <ChevronLeft className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -305,7 +305,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
               </span>
               <button
                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                className="p-1 hover:bg-white/[0.05] rounded transition-colors"
+                className="p-1 hover:bg-white/[0.1] rounded transition-colors"
               >
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -334,13 +334,13 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
                     onClick={() => handleDateSelect(day.date)}
                     className={`relative h-8 w-8 text-xs rounded-lg transition-colors ${
                       !day.isCurrentMonth
-                        ? "text-muted-foreground opacity-50"
+                        ? "text-muted-foreground opacity-40"
                         : isSelected
-                        ? "bg-blue-500 text-white"
+                        ? "bg-blue-500 text-white font-medium"
                         : inRange
-                        ? "bg-blue-500/20 text-white"
-                        : "text-white hover:bg-white/[0.05]"
-                    } ${isStart || isEnd ? 'bg-blue-500' : ''}`}
+                        ? "bg-blue-500/30 text-white"
+                        : "text-white hover:bg-white/[0.1]"
+                    } ${isStart || isEnd ? 'bg-blue-500 ring-2 ring-blue-400' : ''}`}
                   >
                     {day.date.getDate()}
                   </button>
@@ -350,32 +350,30 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
 
             {/* Selected Range Display */}
             {(startDate || endDate) && (
-              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+              <div className="mt-4 p-3 rounded-lg bg-white/[0.05] border border-white/[0.12]">
                 <div className="text-xs text-muted-foreground mb-1">Selected Range</div>
-                <div className="text-sm text-white">
+                <div className="text-sm text-white font-medium">
                   {startDate ? formatDate(startDate) : 'Start date'} - {endDate ? formatDate(endDate) : 'End date'}
                 </div>
               </div>
             )}
 
-            {/* Action Buttons */}
-            {selectedPreset === "custom" && (
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="flex-1 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-sm hover:bg-white/[0.05] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleApply}
-                  disabled={!startDate || !endDate}
-                  className="flex-1 px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/[0.05] disabled:text-muted-foreground text-white text-sm font-medium transition-colors"
-                >
-                  Apply
-                </button>
-              </div>
-            )}
+            {/* Action Buttons - Always Visible */}
+            <div className="flex gap-2 mt-4 pt-4 border-t border-white/[0.12]">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="flex-1 px-3 py-2 rounded-lg bg-white/[0.05] border border-white/[0.12] text-white text-sm hover:bg-white/[0.1] transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApply}
+                disabled={!startDate || !endDate}
+                className="flex-1 px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/[0.05] disabled:text-muted-foreground disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+              >
+                Apply
+              </button>
+            </div>
           </div>
         </div>
       )}
