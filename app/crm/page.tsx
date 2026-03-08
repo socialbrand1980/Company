@@ -23,9 +23,16 @@ function formatTimestamp(timestamp: any): string {
   try {
     let date: Date
     
-    if (typeof timestamp === 'number') {
+    // If it's already a Date object (from Google Sheets)
+    if (timestamp instanceof Date) {
+      date = timestamp
+    }
+    // If it's a number (Unix timestamp)
+    else if (typeof timestamp === 'number') {
       date = new Date(timestamp)
-    } else {
+    }
+    // If it's a string
+    else {
       const dateStr = String(timestamp)
       
       // Handle ISO format (from new submissions)
@@ -127,7 +134,14 @@ export default function CRMDashboard() {
     try {
       const response = await fetch('/api/crm/leads')
       const data = await response.json()
-      console.log('CRM API Response:', data)
+      console.log('=== API RESPONSE ===')
+      console.log('Full response:', data)
+      console.log('Leads array:', data.leads)
+      if (data.leads && data.leads.length > 0) {
+        console.log('First lead:', data.leads[0])
+        console.log('First lead keys:', Object.keys(data.leads[0]))
+        console.log('Timestamp value:', data.leads[0].timestamp)
+      }
       if (data.success) {
         setLeads(data.leads || [])
         console.log('Leads loaded:', data.leads?.length || 0)

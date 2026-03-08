@@ -24,9 +24,16 @@ function formatTimestamp(timestamp: any): string {
   try {
     let date: Date
     
-    if (typeof timestamp === 'number') {
+    // If it's already a Date object (from Google Sheets)
+    if (timestamp instanceof Date) {
+      date = timestamp
+    }
+    // If it's a number (Unix timestamp)
+    else if (typeof timestamp === 'number') {
       date = new Date(timestamp)
-    } else {
+    }
+    // If it's a string
+    else {
       const dateStr = String(timestamp)
       
       // Handle ISO format (from new submissions)
