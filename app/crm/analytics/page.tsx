@@ -211,8 +211,8 @@ export default function CRMAnalyticsPage() {
       // Handle week/day sorting
       const aLabel = String(a.label || a.month)
       const bLabel = String(b.label || b.month)
-      const aNum = parseInt(aLabel.replace('W', ''))
-      const bNum = parseInt(bLabel.replace('W', ''))
+      const aNum = Number(aLabel.replace('W', '')) || 0
+      const bNum = Number(bLabel.replace('W', '')) || 0
       return aNum - bNum
     })
 
