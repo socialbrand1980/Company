@@ -207,8 +207,8 @@ export default function CRMAnalyticsPage() {
       if (a.year !== b.year) return a.year - b.year
       if (a.month !== b.month) return a.month - b.month
       // Handle week/day sorting
-      const aNum = parseInt(a.label.replace('W', ''))
-      const bNum = parseInt(b.label.replace('W', ''))
+      const aNum = parseInt(String(a.label).replace('W', ''))
+      const bNum = parseInt(String(b.label).replace('W', ''))
       return aNum - bNum
     })
 
