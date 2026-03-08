@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Google Sheet ID from your Work With Us form
-const SPREADSHEET_ID = '1QUWb2DLCjosHoaoYNiyZbh_YqrKA0QcjE31HRTcCCvk'
+const SPREADSHEET_ID = '13ruAstGIxEl9y-9BQ1eWJsfTkYiwPAYK5obLug2q7N0'
 
 // Google Apps Script Webhook URL for updates
 const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwCxbm5mXSBFKiPg8yAOpERNBQMsnaHvDPHX9BoTheB4S7LpxLa0qJypJ7TxwCnmQNT/exec'

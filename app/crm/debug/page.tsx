@@ -12,7 +12,7 @@ export default function SheetDebugPage() {
 
   useEffect(() => {
     async function debug() {
-      const spreadsheetId = '1QUWb2DLCjosHoaoYNiyZbh_YqrKA0QcjE31HRTcCCvk'
+      const spreadsheetId = '13ruAstGIxEl9y-9BQ1eWJsfTkYiwPAYK5obLug2q7N0'
       const sheetName = 'Work With Us Leads'
       
       const info: any = {
