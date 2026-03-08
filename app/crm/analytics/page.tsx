@@ -13,6 +13,7 @@ interface Lead {
   brandname: string
   industry: string
   email: string
+  phone?: string
 }
 
 interface FunnelData {
@@ -447,7 +448,7 @@ export default function CRMAnalyticsPage() {
     }, {})
     const topStatus = Object.entries(statusCounts).sort((a, b) => b[1] - a[1])[0]
     if (topStatus) {
-      csvSections.push(`• Most leads are in '${topStatus[0]}' stage (${topStatus[1]} leads)`)
+      csvSections.push(`• Most leads are in '${topStatus[0] as string}' stage (${topStatus[1] as number} leads)`)
     }
 
     // Insight 2: Top Industry
@@ -458,14 +459,14 @@ export default function CRMAnalyticsPage() {
     }, {})
     const topIndustry = Object.entries(industryCounts).sort((a, b) => b[1] - a[1])[0]
     if (topIndustry) {
-      csvSections.push(`• Top industry: ${topIndustry[0]} (${topIndustry[1]} leads)`)
+      csvSections.push(`• Top industry: ${topIndustry[0] as string} (${topIndustry[1] as number} leads)`)
     }
 
     // Insight 3: Revenue Insight
     const closedWonLeads = filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won')
     if (closedWonLeads.length > 0) {
       const totalRevenue = closedWonLeads.reduce((sum: number, l: Lead) => {
-        const budget = typeof l.budget === 'string' 
+        const budget = typeof l.budget === 'string'
           ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
           : (l.budget as number) || 0
         return sum + budget
