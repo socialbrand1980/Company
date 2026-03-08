@@ -59,6 +59,11 @@ export default function CRMAnalyticsPage() {
 
   // Process revenue data based on selected date range
   useEffect(() => {
+    console.log('=== Analytics Filter ===')
+    console.log('Date range:', dateRange)
+    console.log('Total leads:', leads.length)
+    console.log('Closed Won leads:', leads.filter(l => l.leadstatus === 'Closed Won').length)
+    
     if (leads.length === 0) return
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -67,25 +72,43 @@ export default function CRMAnalyticsPage() {
     const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null
     const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null
 
+    console.log('Start date:', startDate)
+    console.log('End date:', endDate)
+
     // Set start of day for startDate
     if (startDate) startDate.setHours(0, 0, 0, 0)
     // Set end of day for endDate
     if (endDate) endDate.setHours(23, 59, 59, 999)
 
+    let filteredCount = 0
+    
     leads.forEach((lead: Lead) => {
-      if (lead.leadstatus !== 'Closed Won') return
-      
+      if (lead.leadstatus !== 'Closed Won') {
+        return
+      }
+
       const leadDate = new Date(lead.timestamp)
-      leadDate.setHours(0, 0, 0, 0)
+      const leadDateOnly = new Date(leadDate.getFullYear(), leadDate.getMonth(), leadDate.getDate())
       
+      console.log('Lead:', lead.brandname, 'Status:', lead.leadstatus, 'Date:', leadDateOnly, 'Budget:', lead.budget)
+
       // Filter by date range
-      if (startDate && leadDate < startDate) return
-      if (endDate && leadDate > endDate) return
+      if (startDate && leadDateOnly < startDate) {
+        console.log('  → Skipped: Before start date')
+        return
+      }
+      if (endDate && leadDateOnly > endDate) {
+        console.log('  → Skipped: After end date')
+        return
+      }
+      
+      console.log('  → Included in range')
+      filteredCount++
       
       const year = leadDate.getFullYear()
       const month = leadDate.getMonth()
       const day = leadDate.getDate()
-      
+
       // Determine grouping based on date range
       let groupByDay = false
       if (startDate && endDate) {
@@ -94,11 +117,14 @@ export default function CRMAnalyticsPage() {
       } else if (startDate && !endDate) {
         // Only start date (e.g., "Today")
         groupByDay = true
+      } else if (!startDate && !endDate) {
+        // All time - group by month
+        groupByDay = false
       }
-      
+
       let key: string
       let label: string
-      
+
       if (groupByDay) {
         key = `${year}-${month}-${day}`
         label = `${day}`
@@ -106,8 +132,8 @@ export default function CRMAnalyticsPage() {
         key = `${year}-${month}`
         label = monthNames[month]
       }
-      
-      const budgetValue = typeof lead.budget === 'string' 
+
+      const budgetValue = typeof lead.budget === 'string'
         ? parseInt(lead.budget.replace(/[^0-9]/g, '')) || 0
         : (lead.budget as number) || 0
 
@@ -126,11 +152,15 @@ export default function CRMAnalyticsPage() {
       data[key].clients.push(lead.brandname || 'Unknown')
     })
 
+    console.log('Filtered leads count:', filteredCount)
+    console.log('Grouped data:', data)
+
     const sortedData = Object.values(data).sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year
       return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
+    console.log('Sorted data:', sortedData)
     setMonthlyData(sortedData)
   }, [leads, dateRange])
 
