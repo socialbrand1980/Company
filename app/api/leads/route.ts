@@ -19,8 +19,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare data for Google Apps Script - match exact column names
+    const now = new Date()
+    // Format timestamp to match Google Sheets format: DD/MM/YYYY HH:MM:SS
+    const timestamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+    
     const formData = {
-      'Timestamp': new Date().toISOString(),
+      'Timestamp': timestamp,
       'Brand Name': body.brandName || '',
       'Website': body.website || '',
       'Industry': body.industry || '',
