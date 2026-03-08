@@ -6,7 +6,7 @@ import { formatIDR } from "@/lib/format-currency"
 
 interface Lead {
   leadstatus: string
-  budget: string
+  budget: string | number
 }
 
 export default function CRMAnalyticsPage() {
@@ -36,7 +36,12 @@ export default function CRMAnalyticsPage() {
     activeClients: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
     totalRevenue: leads
       .filter((l: Lead) => l.leadstatus === 'Closed Won')
-      .reduce((acc: number, l: Lead) => acc + (parseInt(l.budget?.replace(/[^0-9]/g, '') || '0')), 0),
+      .reduce((acc: number, l: Lead) => {
+        const budgetValue = typeof l.budget === 'string' 
+          ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+          : (l.budget as number) || 0
+        return acc + budgetValue
+      }, 0),
     conversionRate: leads.length > 0 ? ((leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / leads.length) * 100).toFixed(1) : "0"
   }
 
