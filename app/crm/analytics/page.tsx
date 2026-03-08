@@ -249,22 +249,22 @@ export default function CRMAnalyticsPage() {
       
       // Check if date is valid
       if (isNaN(leadDate.getTime())) return true
-      
+
       // If no date range selected, include all
       if (!dateRange.startDate && !dateRange.endDate) return true
-      
+
       // Filter by date range
       if (dateRange.startDate) {
-        const start = new Date(dateRange.startDate)
+        const start = new Date(dateRange.startDate as Date)
         start.setHours(0, 0, 0, 0)
         if (leadDate < start) return false
       }
       if (dateRange.endDate) {
-        const end = new Date(dateRange.endDate)
+        const end = new Date(dateRange.endDate as Date)
         end.setHours(23, 59, 59, 999)
         if (leadDate > end) return false
       }
-      
+
       return true
     })
 
