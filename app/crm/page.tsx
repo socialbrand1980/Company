@@ -73,6 +73,8 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split(' ')
         const datePart = parts[0] // DD/MM/YYYY
         const [day, month, year] = datePart.split('/')
+        // Month in Google Sheets is 1-indexed (3 = March), JS Date is 0-indexed (2 = March)
+        // So we use the month directly when creating date string
         date = new Date(`${year}-${month}-${day}`)
       }
       // Handle DD/MM/YYYY
@@ -113,11 +115,11 @@ function formatTimestamp(timestamp: any): string {
     
     // Simple format: DD/MM/YYYY
     const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')  // +1 because getMonth() is 0-indexed
     const year = date.getFullYear()
     const result = `${day}/${month}/${year}`
     
-    console.log('Formatted result:', result)
+    console.log('Formatted result:', result, 'from date:', date)
     return result
   } catch (e) {
     console.log('Error in formatTimestamp:', e)

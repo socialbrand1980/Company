@@ -61,6 +61,7 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split(' ')
         const datePart = parts[0] // DD/MM/YYYY
         const [day, month, year] = datePart.split('/')
+        // Create date string in ISO format for proper parsing
         date = new Date(`${year}-${month}-${day}`)
       }
       // Handle DD/MM/YYYY
