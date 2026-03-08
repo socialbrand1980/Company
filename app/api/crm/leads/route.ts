@@ -40,7 +40,17 @@ export async function GET(request: NextRequest) {
         })
 
         const rows = response.data.values || []
-        
+
+        console.log('=== METHOD 1: GOOGLE SHEETS API ===')
+        console.log('Rows count:', rows.length)
+        if (rows.length > 0) {
+          console.log('First row (full):', rows[0])
+          console.log('First row length:', rows[0].length)
+          rows[0].forEach((value: string, index: number) => {
+            console.log(`Index ${index} (Column ${String.fromCharCode(65 + index)}): "${value}"`)
+          })
+        }
+
         const leads = rows.map(row => ({
           timestamp: row[0] || '',
           brandname: row[1] || '',
@@ -64,6 +74,8 @@ export async function GET(request: NextRequest) {
           leadstatus: row[19] || 'New',
           notes: row[20] || '',
         }))
+
+        console.log('First lead budget:', leads[0]?.budget)
 
         return NextResponse.json({
           success: true,
@@ -101,12 +113,26 @@ export async function GET(request: NextRequest) {
       const cols = json.table.cols.map((col: any) => col.label || col.id || '')
       const rows = json.table.rows || []
 
+      console.log('=== GVIZ COLUMNS ===')
+      console.log('Column labels:', cols)
+      console.log('First row data:', rows[0])
+      if (rows[0]) {
+        console.log('First row cells:', rows[0].c)
+        cols.forEach((col: string, index: number) => {
+          const cell = rows[0].c[index]
+          console.log(`Column ${index} (${col}):`, cell?.v || cell?.f || 'EMPTY')
+        })
+      }
+
       const leads = rows.map((row: any) => {
         const lead: any = {}
         cols.forEach((col: string, index: number) => {
           const cell = row.c[index]
           const key = col.toLowerCase().replace(/\s+/g, '')
           lead[key] = cell?.v || cell?.f || ''
+          if (key === 'budget') {
+            console.log('Budget field:', key, 'value:', lead[key], 'cell:', cell)
+          }
         })
         return lead
       })

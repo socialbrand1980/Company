@@ -9,7 +9,6 @@ import {
   ChevronUp,
   ChevronDown,
   MoreHorizontal,
-  Eye,
   Edit2,
   Trash2,
   Mail,
@@ -18,7 +17,18 @@ import {
   DollarSign,
   Calendar,
   Tag,
-  X
+  X,
+  Eye,
+  User,
+  Globe,
+  Target,
+  Clock,
+  MessageSquare,
+  TrendingUp,
+  Users as UsersIcon,
+  Briefcase,
+  FileText,
+  CheckCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
@@ -267,7 +277,7 @@ export default function CRMLeadsPage() {
                 <TableHeader label="Services" />
                 <TableHeader label="Timeline" field="timeline" sort={handleSort} currentSort={sortField} />
                 <TableHeader label="Status" field="leadstatus" sort={handleSort} currentSort={sortField} />
-                <th className="p-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                <th className="p-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -382,8 +392,15 @@ export default function CRMLeadsPage() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
+                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => setSelectedLead(lead)}
+                        className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4 text-blue-400" />
+                      </button>
+                      <button
                         onClick={() => setEditingLead(lead)}
                         className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors"
                         title="Edit Lead"
@@ -395,7 +412,7 @@ export default function CRMLeadsPage() {
                           e.stopPropagation()
                           // Convert phone to string and clean
                           let phone = String(lead.phone || '').replace(/[^0-9]/g, '')
-                          
+
                           // Format to international format (+62)
                           if (phone.startsWith('0')) {
                             phone = '62' + phone.substring(1)
@@ -405,14 +422,14 @@ export default function CRMLeadsPage() {
                             // Assume it's a local number without country code
                             phone = '62' + phone
                           }
-                          
+
                           // Fallback if still empty
                           phone = phone || '62811198093'
-                          
+
                           const brandName = lead.brandname || lead.fullname || 'Customer'
                           const industry = lead.industry || 'their industry'
                           const goal = lead.primarygoal ? ` dengan tujuan: ${String(lead.primarygoal).substring(0, 100)}${String(lead.primarygoal).length > 100 ? '...' : ''}` : ''
-                          
+
                           const message = `Halo ${lead.fullname || 'Bapak/Ibu'} dari ${brandName}! 👋
 
 Saya dari SocialBrand 1980. Terima kasih telah tertarik dengan layanan kami.
@@ -423,10 +440,10 @@ Saya ingin membantu ${brandName} untuk tumbuh lebih pesat. Apakah ada waktu untu
 
 Best regards,
 SocialBrand 1980 Team`
-                          
+
                           const encodedMessage = encodeURIComponent(message)
                           const waUrl = `https://wa.me/${phone}?text=${encodedMessage}`
-                          
+
                           // Open WhatsApp
                           window.open(waUrl, '_blank')
                         }}
@@ -437,7 +454,7 @@ SocialBrand 1980 Team`
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                         </svg>
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           const subject = encodeURIComponent(`Regarding Your Interest in SocialBrand 1980 - ${lead.brandname || lead.fullname}`)
@@ -479,23 +496,16 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
         )}
       </div>
 
-      {/* Lead Detail Panel */}
+      {/* Lead Detail Modal */}
       {selectedLead && (
-        <LeadDetailPanel 
-          lead={selectedLead} 
-          onClose={() => setSelectedLead(null)} 
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
         />
       )}
-    </div>
-  )
-}
 
-function TableHeader({ label, field, sort, currentSort }: any) {
-  return (
-    <th 
-      className={`p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${field ? 'cursor-pointer hover:text-white transition-colors' : ''}`}
-      onClick={() => field && sort(field)}
-    >
+      {/* Edit Lead Modal */}
+      {editingLead && (
       <div className="flex items-center gap-1">
         {label}
         {field && currentSort === field && (
@@ -736,6 +746,153 @@ function EditLeadModal({ lead, onClose, onSave, saving }: {
           </div>
         </form>
       </div>
+    </div>
+  )
+}
+
+// Lead Detail Modal - Shows ALL data from spreadsheet
+function LeadDetailModal({ lead, onClose }: { lead: Lead, onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-4xl glass-card rounded-xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.05] sticky top-0 bg-[#0a0a0f]">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Lead Details</h2>
+            <p className="text-sm text-muted-foreground mt-1">{lead.brandname} - {lead.email}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Brand Information */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-400" />
+              Brand Information
+            </h3>
+            <div className="space-y-3 pl-6">
+              <DetailRow icon={Building2} label="Brand Name" value={lead.brandname} />
+              {lead.website && <DetailRow icon={Globe} label="Website" value={lead.website} isLink />}
+              <DetailRow icon={Tag} label="Industry" value={lead.industry} />
+              <DetailRow icon={Target} label="Target Market" value={lead.targetmarket} />
+              <DetailRow icon={Clock} label="Year Founded" value={lead.yearfounded} />
+              <DetailRow icon={UsersIcon} label="Team Size" value={lead.teamsize} />
+            </div>
+          </section>
+
+          {/* Contact Information */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <User className="h-4 w-4 text-green-400" />
+              Contact Information
+            </h3>
+            <div className="space-y-3 pl-6">
+              <DetailRow icon={User} label="Full Name" value={lead.fullname} />
+              <DetailRow icon={Briefcase} label="Role" value={lead.role} />
+              <DetailRow icon={Mail} label="Email" value={lead.email} isLink={`mailto:${lead.email}`} />
+              <DetailRow icon={Phone} label="Phone" value={lead.phone} isLink={`tel:${lead.phone}`} />
+            </div>
+          </section>
+
+          {/* Business Goals */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-purple-400" />
+              Business Goals
+            </h3>
+            <div className="space-y-3 pl-6">
+              <DetailRow icon={Target} label="Primary Goal" value={lead.primarygoal} />
+              <DetailRow icon={MessageSquare} label="Run Ads" value={lead.runads === 'Yes' ? 'Yes' : 'No'} />
+              <DetailRow icon={DollarSign} label="Budget" value={lead.budget ? formatIDR(lead.budget) : 'N/A'} />
+              <DetailRow icon={Clock} label="Timeline" value={lead.timeline} />
+            </div>
+          </section>
+
+          {/* Marketing Channels */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <UsersIcon className="h-4 w-4 text-orange-400" />
+              Marketing Channels
+            </h3>
+            <div className="space-y-3 pl-6">
+              <DetailRow icon={Tag} label="Channels" value={lead.channels} />
+              <DetailRow icon={FileText} label="Services Needed" value={lead.servicesneeded} />
+            </div>
+          </section>
+
+          {/* Additional Info */}
+          {(lead.targetaudience || lead.competitors) && (
+            <section className="space-y-4 md:col-span-2">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <FileText className="h-4 w-4 text-cyan-400" />
+                Additional Information
+              </h3>
+              <div className="space-y-3 pl-6">
+                {lead.targetaudience && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Target Audience</p>
+                    <p className="text-sm text-white">{lead.targetaudience}</p>
+                  </div>
+                )}
+                {lead.competitors && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Competitors</p>
+                    <p className="text-sm text-white">{lead.competitors}</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Status & Notes */}
+          <section className="space-y-4 md:col-span-2">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-400" />
+              Status & Notes
+            </h3>
+            <div className="space-y-3 pl-6">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Status</p>
+                <span className={`text-sm px-3 py-1.5 rounded-full border ${statusColors[lead.leadstatus] || statusColors["New"]}`}>
+                  {lead.leadstatus || "New"}
+                </span>
+              </div>
+              {lead.notes && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
+                  <p className="text-sm text-white">{lead.notes}</p>
+                </div>
+              )}
+              {lead.timestamp && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Submitted At</p>
+                  <p className="text-sm text-white">{formatTimestamp(lead.timestamp)}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Helper component for detail rows
+function DetailRow({ icon: Icon, label, value, isLink }: { icon: any, label: string, value: string, isLink?: boolean | string }) {
+  if (!value) return null
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+      {isLink ? (
+        <a href={typeof isLink === "string" ? isLink : '#'} className="text-sm text-blue-400 hover:underline block">
+          {value}
+        </a>
+      ) : (
+        <p className="text-sm text-white">{value}</p>
+      )}
     </div>
   )
 }

@@ -156,8 +156,17 @@ export default function CRMPipelinePage() {
     try {
       const response = await fetch('/api/crm/leads')
       const data = await response.json()
+      console.log('=== PIPELINE FETCH ===')
+      console.log('Full response:', data)
+      console.log('Leads array:', data.leads)
+      if (data.leads && data.leads.length > 0) {
+        console.log('First lead:', data.leads[0])
+        console.log('First lead budget:', data.leads[0].budget, 'type:', typeof data.leads[0].budget)
+        console.log('First lead keys:', Object.keys(data.leads[0]))
+      }
       if (data.success) {
         setLeads(data.leads || [])
+        console.log('Leads loaded:', data.leads?.length || 0)
       }
     } catch (error) {
       console.error('Failed to fetch leads:', error)
