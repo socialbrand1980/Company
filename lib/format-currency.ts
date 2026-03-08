@@ -33,7 +33,12 @@ export function formatCompactIDR(amount: number | string): string {
     return `Rp ${(numericAmount / 1000000).toFixed(1)}M`
   }
   if (numericAmount >= 1000) {
-    return `Rp ${(numericAmount / 1000).toFixed(1)}K`
+    return `Rp ${(numericAmount / 1000).toFixed(0)}K`
   }
   return `Rp ${numericAmount.toLocaleString('id-ID')}`
+}
+
+// Format number with proper thousand separator for display
+export function formatNumber(num: number): string {
+  return num.toLocaleString('id-ID')
 }

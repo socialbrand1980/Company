@@ -86,8 +86,9 @@ export default function CRMDashboard() {
     totalValue: leads
       .filter(l => l.leadstatus === "Closed Won")
       .reduce((acc, lead) => {
-        const budget = lead.budget?.replace(/[^0-9]/g, '')
-        return acc + (budget ? parseInt(budget) : 0)
+        const budgetStr = lead.budget || ''
+        const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0
+        return acc + budget
       }, 0),
   }
 
@@ -209,8 +210,9 @@ export default function CRMDashboard() {
               {formatCompactIDR(
                 leads.filter(l => ["Contacted", "Discovery Call", "Proposal Sent", "Negotiation"].includes(l.leadstatus))
                   .reduce((acc, lead) => {
-                    const budget = lead.budget?.replace(/[^0-9]/g, '')
-                    return acc + (budget ? parseInt(budget) : 50000000)
+                    const budgetStr = lead.budget || ''
+                    const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 50000000
+                    return acc + budget
                   }, 0)
               )}
             </span>
