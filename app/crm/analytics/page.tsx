@@ -166,7 +166,13 @@ export default function CRMAnalyticsPage() {
     )
   }
 
-  const years = [...new Set(leads.map((l: Lead) => new Date(l.timestamp || Date.now()).getFullYear()))].sort((a, b) => b - a)
+  const years = [...new Set(leads
+    .map((l: Lead) => {
+      const date = new Date(l.timestamp || Date.now())
+      return date.getFullYear()
+    })
+    .filter(year => !isNaN(year)))]
+    .sort((a, b) => b - a)
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
