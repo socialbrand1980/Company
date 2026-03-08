@@ -231,16 +231,44 @@ export default function CRMAnalyticsPage() {
   // Calculate stats (filtered by date range)
   const getFilteredStats = () => {
     const filteredLeads = leads.filter((lead: Lead) => {
-      const leadDate = new Date(lead.timestamp)
+      // Parse timestamp from Google Sheets format "Date(2026,2,8,13,3,42)"
+      let leadDate: Date
+      
+      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
+        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+        if (match) {
+          const [, year, month, day, hour, minute, second] = match
+          // Google Sheets uses 0-indexed months like JS
+          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+        } else {
+          leadDate = new Date(lead.timestamp)
+        }
+      } else {
+        leadDate = new Date(lead.timestamp)
+      }
+      
+      // Check if date is valid
+      if (isNaN(leadDate.getTime())) return true
       
       // If no date range selected, include all
       if (!dateRange.startDate && !dateRange.endDate) return true
       
       // Filter by date range
-      if (dateRange.startDate && leadDate < dateRange.startDate) return false
-      if (dateRange.endDate && leadDate > dateRange.endDate) return false
+      const start = new Date(dateRange.startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(dateRange.endDate)
+      end.setHours(23, 59, 59, 999)
+      
+      if (leadDate < start) return false
+      if (leadDate > end) return false
       
       return true
+    })
+
+    console.log('📊 Filtered Stats:', {
+      totalLeads: filteredLeads.length,
+      closedWon: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
+      dateRange: dateRange.label
     })
 
     return {
@@ -280,7 +308,10 @@ export default function CRMAnalyticsPage() {
 
   // Update stats when dateRange or leads change
   useEffect(() => {
-    setFilteredStats(getFilteredStats())
+    console.log('🔔 Date range changed, recalculating stats...')
+    const newStats = getFilteredStats()
+    console.log('📊 New stats:', newStats)
+    setFilteredStats(newStats)
   }, [leads, dateRange])
 
   const stats = filteredStats
@@ -298,10 +329,33 @@ export default function CRMAnalyticsPage() {
   // Industry breakdown (using filtered stats)
   const industryBreakdown = leads
     .filter((lead: Lead) => {
-      const leadDate = new Date(lead.timestamp)
+      // Parse timestamp from Google Sheets format
+      let leadDate: Date
+      
+      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
+        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+        if (match) {
+          const [, year, month, day, hour, minute, second] = match
+          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+        } else {
+          leadDate = new Date(lead.timestamp)
+        }
+      } else {
+        leadDate = new Date(lead.timestamp)
+      }
+      
+      if (isNaN(leadDate.getTime())) return true
+      
       if (!dateRange.startDate && !dateRange.endDate) return true
-      if (dateRange.startDate && leadDate < dateRange.startDate) return false
-      if (dateRange.endDate && leadDate > dateRange.endDate) return false
+      
+      const start = new Date(dateRange.startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(dateRange.endDate)
+      end.setHours(23, 59, 59, 999)
+      
+      if (leadDate < start) return false
+      if (leadDate > end) return false
+      
       return true
     })
     .reduce((acc: any, lead: Lead) => {
