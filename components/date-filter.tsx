@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { Calendar as CalendarIcon, ChevronDown, Check } from "lucide-react"
+import { Calendar as CalendarIcon, ChevronDown, Check, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface DateRange {
   startDate: Date | null
@@ -22,11 +22,14 @@ type PresetOption =
   | "last30"
   | "thisMonth"
   | "lastMonth"
+  | "custom"
 
 export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<PresetOption>("all")
-  const [customRange, setCustomRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -55,44 +58,40 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
       case "yesterday": {
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
-        yesterday.setHours(0, 0, 0, 0)
         return { start: yesterday, end: yesterday, label: "Yesterday" }
       }
       
       case "last7": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 6)
-        startDate.setHours(0, 0, 0, 0)
         return { start: startDate, end: today, label: "Last 7 days" }
       }
       
       case "last14": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 13)
-        startDate.setHours(0, 0, 0, 0)
         return { start: startDate, end: today, label: "Last 14 days" }
       }
       
       case "last30": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 29)
-        startDate.setHours(0, 0, 0, 0)
         return { start: startDate, end: today, label: "Last 30 days" }
       }
       
       case "thisMonth": {
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-        startDate.setHours(0, 0, 0, 0)
         return { start: startDate, end: today, label: "This month" }
       }
       
       case "lastMonth": {
         const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-        startDate.setHours(0, 0, 0, 0)
         const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
-        endDate.setHours(23, 59, 59, 999)
         return { start: startDate, end: endDate, label: "Last month" }
       }
+      
+      case "custom":
+        return { start: startDate, end: endDate, label: startDate && endDate ? formatDateRange(startDate, endDate) : "Custom range" }
       
       default:
         return { start: null, end: null, label: "All time" }
@@ -102,7 +101,16 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   // Handle preset selection
   const handlePresetSelect = (preset: PresetOption) => {
     setSelectedPreset(preset)
+    
+    if (preset === "custom") {
+      // Keep calendar open for custom selection
+      return
+    }
+    
     const range = getDateRange(preset)
+    setStartDate(range.start)
+    setEndDate(range.end)
+    
     onDateRangeChange?.({
       startDate: range.start,
       endDate: range.end,
@@ -111,38 +119,118 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
     setIsOpen(false)
   }
 
-  // Handle custom date range apply
-  const handleApplyCustomRange = () => {
-    if (customRange.start && customRange.end) {
-      const startDate = new Date(customRange.start)
-      startDate.setHours(0, 0, 0, 0)
-      const endDate = new Date(customRange.end)
-      endDate.setHours(23, 59, 59, 999)
-      
+  // Handle date selection from calendar
+  const handleDateSelect = (date: Date) => {
+    if (!startDate || (startDate && endDate)) {
+      // Start new selection
+      setStartDate(date)
+      setEndDate(null)
+    } else {
+      // Complete range
+      if (date < startDate) {
+        setStartDate(date)
+        setEndDate(startDate)
+      } else {
+        setEndDate(date)
+      }
+    }
+  }
+
+  // Apply custom range
+  const handleApply = () => {
+    if (startDate && endDate) {
       onDateRangeChange?.({
         startDate,
         endDate,
-        label: `${formatDate(startDate)} - ${formatDate(endDate)}`
+        label: formatDateRange(startDate, endDate)
       })
       setIsOpen(false)
     }
   }
 
-  // Format date for display
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    })
+  // Format date range for display
+  const formatDateRange = (start: Date, end: Date): string => {
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return `${startStr} - ${endStr}`
   }
 
   // Get current display label
   const getCurrentLabel = (): string => {
-    if (selectedPreset === "all") {
-      return "All time"
+    if (selectedPreset !== "custom") {
+      return getDateRange(selectedPreset).label
     }
-    return getDateRange(selectedPreset).label
+    if (startDate && endDate) {
+      return formatDateRange(startDate, endDate)
+    }
+    return "Custom range"
+  }
+
+  // Generate calendar days
+  const generateCalendarDays = () => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const startDayOfWeek = firstDay.getDay()
+    const totalDays = lastDay.getDate()
+    
+    const days = []
+    
+    // Previous month days
+    const prevMonth = new Date(year, month, 0)
+    const prevMonthDays = prevMonth.getDate()
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, prevMonthDays - i),
+        isCurrentMonth: false
+      })
+    }
+    
+    // Current month days
+    for (let i = 1; i <= totalDays; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
+      })
+    }
+    
+    // Next month days
+    const remainingDays = 42 - days.length
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false
+      })
+    }
+    
+    return days
+  }
+
+  // Check if date is selected
+  const isDateSelected = (date: Date) => {
+    if (!startDate) return false
+    if (!endDate) {
+      return date.toDateString() === startDate.toDateString()
+    }
+    return date >= startDate && date <= endDate
+  }
+
+  // Check if date is start date
+  const isStartDate = (date: Date) => {
+    return startDate && date.toDateString() === startDate.toDateString()
+  }
+
+  // Check if date is end date
+  const isEndDate = (date: Date) => {
+    return endDate && date.toDateString() === endDate.toDateString()
+  }
+
+  // Check if date is in range
+  const isInRange = (date: Date) => {
+    if (!startDate || !endDate) return false
+    return date > startDate && date < endDate
   }
 
   const presets: { id: PresetOption; label: string }[] = [
@@ -154,7 +242,11 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
     { id: "last30", label: "Last 30 days" },
     { id: "thisMonth", label: "This month" },
     { id: "lastMonth", label: "Last month" },
+    { id: "custom", label: "Custom range" },
   ]
+
+  const calendarDays = generateCalendarDays()
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -168,11 +260,11 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Panel */}
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 flex glass-card rounded-xl shadow-2xl border border-white/[0.08] z-50 overflow-hidden">
           {/* Sidebar Presets */}
-          <div className="w-48 border-r border-white/[0.08] p-2">
+          <div className="w-44 border-r border-white/[0.08] p-2">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
               Quick Filters
             </div>
@@ -189,52 +281,109 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
                 {selectedPreset === preset.id && (
                   <Check className="h-4 w-4 flex-shrink-0" />
                 )}
-                <span>{preset.label}</span>
+                <span className="truncate">{preset.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Calendar Picker */}
+          {/* Calendar Panel */}
           <div className="w-72 p-4">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Custom Date Range
+              {selectedPreset === "custom" ? "Select Date Range" : "Calendar View"}
             </div>
             
-            <div className="space-y-3">
-              {/* Start Date */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Start Date</label>
-                <input
-                  type="date"
-                  value={customRange.start}
-                  onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                />
-              </div>
-
-              {/* End Date */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">End Date</label>
-                <input
-                  type="date"
-                  value={customRange.end}
-                  onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                />
-              </div>
-
-              {/* Apply Button */}
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-4">
               <button
-                onClick={handleApplyCustomRange}
-                disabled={!customRange.start || !customRange.end}
-                className="w-full px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/[0.05] disabled:text-muted-foreground text-white text-sm font-medium transition-colors"
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                className="p-1 hover:bg-white/[0.05] rounded transition-colors"
               >
-                Apply Range
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <span className="text-sm font-medium text-white">
+                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+              <button
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                className="p-1 hover:bg-white/[0.05] rounded transition-colors"
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
+
+            {/* Week Days */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {weekDays.map(day => (
+                <div key={day} className="text-center text-xs text-muted-foreground py-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day, index) => {
+                const isSelected = isDateSelected(day.date)
+                const isStart = isStartDate(day.date)
+                const isEnd = isEndDate(day.date)
+                const inRange = isInRange(day.date)
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleDateSelect(day.date)}
+                    className={`relative h-8 w-8 text-xs rounded-lg transition-colors ${
+                      !day.isCurrentMonth
+                        ? "text-muted-foreground opacity-50"
+                        : isSelected
+                        ? "bg-blue-500 text-white"
+                        : inRange
+                        ? "bg-blue-500/20 text-white"
+                        : "text-white hover:bg-white/[0.05]"
+                    } ${isStart || isEnd ? 'bg-blue-500' : ''}`}
+                  >
+                    {day.date.getDate()}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Selected Range Display */}
+            {(startDate || endDate) && (
+              <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                <div className="text-xs text-muted-foreground mb-1">Selected Range</div>
+                <div className="text-sm text-white">
+                  {startDate ? formatDate(startDate) : 'Start date'} - {endDate ? formatDate(endDate) : 'End date'}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {selectedPreset === "custom" && (
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white text-sm hover:bg-white/[0.05] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleApply}
+                  disabled={!startDate || !endDate}
+                  className="flex-1 px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/[0.05] disabled:text-muted-foreground text-white text-sm font-medium transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   )
+}
+
+// Format single date for display
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
