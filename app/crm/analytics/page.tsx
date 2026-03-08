@@ -99,8 +99,10 @@ export default function CRMAnalyticsPage() {
         const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
         if (match) {
           const [, year, month, day, hour, minute, second] = match
-          // Note: Google Sheets month is 1-indexed (1=Jan), JS month is 0-indexed (0=Jan)
-          leadDate = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
+          // Google Sheets appears to use 0-indexed months like JS (0=Jan, 1=Feb, 2=Mar)
+          // So month=2 means March, no conversion needed
+          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+          console.log('Parsed GS timestamp:', lead.timestamp, '→', leadDate.toISOString(), '(month:', Number(month), '= March, no conversion)')
         } else {
           leadDate = new Date(lead.timestamp)
         }
