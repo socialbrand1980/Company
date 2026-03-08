@@ -388,13 +388,13 @@ export default function CRMLeadsPage() {
                       >
                         <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          const phone = lead.phone?.replace(/[^0-9]/g, '') || '62811198093'
+                          const phone = String(lead.phone || '').replace(/[^0-9]/g, '') || '62811198093'
                           const brandName = lead.brandname || lead.fullname || 'Customer'
                           const industry = lead.industry || 'their industry'
-                          const goal = lead.primarygoal ? ` dengan tujuan: ${lead.primarygoal.substring(0, 100)}${lead.primarygoal.length > 100 ? '...' : ''}` : ''
+                          const goal = lead.primarygoal ? ` dengan tujuan: ${String(lead.primarygoal).substring(0, 100)}${String(lead.primarygoal).length > 100 ? '...' : ''}` : ''
                           
                           const message = `Halo ${lead.fullname || 'Bapak/Ibu'} dari ${brandName}! 👋
 
