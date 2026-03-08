@@ -45,13 +45,23 @@ export default function CRMAnalyticsPage() {
   useEffect(() => {
     async function fetchLeads() {
       try {
+        console.log('📡 Fetching leads from API...')
         const response = await fetch('/api/crm/leads')
+        console.log('📡 Response status:', response.status)
+        
         const data = await response.json()
+        console.log('📡 Response data:', data)
+        
         if (data.success) {
           setLeads(data.leads || [])
+          console.log('✅ Leads loaded:', data.leads?.length)
+        } else {
+          console.error('❌ API returned error:', data)
+          setLeads([])
         }
       } catch (error) {
-        console.error('Failed to fetch leads:', error)
+        console.error('❌ Failed to fetch leads:', error)
+        setLeads([])
       } finally {
         setLoading(false)
       }
@@ -558,6 +568,26 @@ export default function CRMAnalyticsPage() {
         <div className="text-center">
           <Activity className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-muted-foreground">Loading analytics...</p>
+          <p className="text-xs text-muted-foreground mt-2">Fetching data from Google Sheets</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (leads.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+            <Activity className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">No Data Available</h2>
+          <p className="text-muted-foreground mb-4">
+            No leads found in the system. Make sure you have submissions from the Work With Us form.
+          </p>
+          <div className="text-sm text-muted-foreground">
+            <p>Check console logs (F12) for more details</p>
+          </div>
         </div>
       </div>
     )
