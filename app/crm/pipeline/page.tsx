@@ -61,15 +61,16 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split(' ')
         const datePart = parts[0] // DD/MM/YYYY
         const [day, month, year] = datePart.split('/')
-        // Create date string in ISO format for proper parsing
-        date = new Date(`${year}-${month}-${day}`)
+        // Create date with explicit month (1-indexed in Google Sheets)
+        // Use UTC to avoid timezone issues
+        date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
       }
       // Handle DD/MM/YYYY
       else if (dateStr.includes('/')) {
         const parts = dateStr.split('/')
         if (parts.length === 3) {
           const [day, month, year] = parts
-          date = new Date(`${year}-${month}-${day}`)
+          date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
         } else {
           date = new Date(dateStr)
         }
@@ -97,9 +98,9 @@ function formatTimestamp(timestamp: any): string {
       return 'N/A'
     }
     
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = date.getFullYear()
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const year = date.getUTCFullYear()
     
     return `${day}/${month}/${year}`
   } catch {

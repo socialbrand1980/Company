@@ -73,9 +73,11 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split(' ')
         const datePart = parts[0] // DD/MM/YYYY
         const [day, month, year] = datePart.split('/')
-        // Month in Google Sheets is 1-indexed (3 = March), JS Date is 0-indexed (2 = March)
-        // So we use the month directly when creating date string
-        date = new Date(`${year}-${month}-${day}`)
+        console.log('Google Sheets date parts:', { day, month, year })
+        // Create date with explicit month (1-indexed in Google Sheets)
+        // Use UTC to avoid timezone issues
+        date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+        console.log('Created UTC date:', date, 'month:', date.getUTCMonth())
       }
       // Handle DD/MM/YYYY
       else if (dateStr.includes('/')) {
@@ -114,9 +116,9 @@ function formatTimestamp(timestamp: any): string {
     }
     
     // Simple format: DD/MM/YYYY
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')  // +1 because getMonth() is 0-indexed
-    const year = date.getFullYear()
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')  // +1 because getMonth() is 0-indexed
+    const year = date.getUTCFullYear()
     const result = `${day}/${month}/${year}`
     
     console.log('Formatted result:', result, 'from date:', date)
