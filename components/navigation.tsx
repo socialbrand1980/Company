@@ -22,6 +22,7 @@ export function Navigation() {
   const isHomePage = pathname === "/"
   const isPortfolioPage = pathname === "/portfolio"
   const isArticlesPage = pathname === "/article"
+  const isWorkWithUsPage = pathname === "/work-with-us"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -122,7 +123,7 @@ export function Navigation() {
             })}
           </div>
 
-          {/* Portfolio & Articles Links - Aligned to Right */}
+          {/* Portfolio, Articles & Work With Us Links - Aligned to Right */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <Link
               href="/portfolio"
@@ -134,6 +135,19 @@ export function Navigation() {
             >
               Portfolio
               {isPortfolioPage && (
+                <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary blur-[2px]" />
+              )}
+            </Link>
+            <Link
+              href="/work-with-us"
+              className={`text-sm font-medium transition-all relative after:absolute after:bottom-0 after:left-0 after:h-px after:bg-primary after:transition-all ${
+                isWorkWithUsPage
+                  ? "text-primary after:w-full"
+                  : "text-muted-foreground hover:text-primary after:w-0 hover:after:w-full"
+              }`}
+            >
+              Work With Us
+              {isWorkWithUsPage && (
                 <span className="absolute -bottom-1 left-0 right-0 h-px bg-primary blur-[2px]" />
               )}
             </Link>
@@ -201,6 +215,16 @@ export function Navigation() {
                 >
                   {isPortfolioPage && <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2" />}
                   Portfolio
+                </Link>
+                <Link
+                  href="/work-with-us"
+                  className={`block text-sm font-medium transition-colors py-2 ${
+                    isWorkWithUsPage ? "text-primary" : "text-muted-foreground hover:text-primary"
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {isWorkWithUsPage && <span className="inline-block w-2 h-2 rounded-full bg-primary mr-2" />}
+                  Work With Us
                 </Link>
                 <Link
                   href="/article"

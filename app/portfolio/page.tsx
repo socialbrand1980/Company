@@ -28,7 +28,7 @@ const CATEGORIES = [
   { name: "Social Media Management", icon: MessageSquare },
   { name: "Content Production", icon: Camera },
   { name: "KOL & Influencer Activation", icon: Users2 },
-  { name: "Paid Ads (Meta & Google)", icon: Target },
+  { name: "Performance Marketing", icon: Target },
   { name: "Omnichannel Marketing Strategy", icon: Layers },
 ]
 

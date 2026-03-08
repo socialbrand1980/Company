@@ -27,8 +27,8 @@ const services = [
   },
   {
     icon: Target,
-    title: "Paid Ads (Meta & Google)",
-    description: "Data-driven advertising campaigns that maximize ROI across Meta and Google platforms.",
+    title: "Performance Marketing",
+    description: "Data-driven paid advertising campaigns across Meta, Google, and other platforms that maximize ROI and drive measurable growth.",
     features: ["Campaign Strategy", "Ad Creative", "Budget Optimization", "Conversion Tracking"]
   },
   {

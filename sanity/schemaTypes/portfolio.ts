@@ -98,7 +98,7 @@ export const portfolio = defineType({
           { title: 'Social Media Management', value: 'Social Media Management' },
           { title: 'Content Production', value: 'Content Production' },
           { title: 'KOL & Influencer Activation', value: 'KOL & Influencer Activation' },
-          { title: 'Paid Ads (Meta & Google)', value: 'Paid Ads (Meta & Google)' },
+          { title: 'Performance Marketing', value: 'Performance Marketing' },
           { title: 'Omnichannel Marketing Strategy', value: 'Omnichannel Marketing Strategy' },
         ],
       },
