@@ -52,41 +52,55 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
       case "all":
         return { start: null, end: null, label: "All time" }
       
-      case "today":
-        return { start: today, end: today, label: "Today" }
+      case "today": {
+        const end = new Date(today)
+        end.setHours(23, 59, 59, 999)
+        return { start: today, end: end, label: "Today" }
+      }
       
       case "yesterday": {
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
-        return { start: yesterday, end: yesterday, label: "Yesterday" }
+        const end = new Date(yesterday)
+        end.setHours(23, 59, 59, 999)
+        return { start: yesterday, end: end, label: "Yesterday" }
       }
       
       case "last7": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 6)
-        return { start: startDate, end: today, label: "Last 7 days" }
+        const end = new Date(today)
+        end.setHours(23, 59, 59, 999)
+        return { start: startDate, end: end, label: "Last 7 days" }
       }
       
       case "last14": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 13)
-        return { start: startDate, end: today, label: "Last 14 days" }
+        const end = new Date(today)
+        end.setHours(23, 59, 59, 999)
+        return { start: startDate, end: end, label: "Last 14 days" }
       }
       
       case "last30": {
         const startDate = new Date(today)
         startDate.setDate(startDate.getDate() - 29)
-        return { start: startDate, end: today, label: "Last 30 days" }
+        const end = new Date(today)
+        end.setHours(23, 59, 59, 999)
+        return { start: startDate, end: end, label: "Last 30 days" }
       }
       
       case "thisMonth": {
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-        return { start: startDate, end: today, label: "This month" }
+        const end = new Date(today)
+        end.setHours(23, 59, 59, 999)
+        return { start: startDate, end: end, label: "This month" }
       }
       
       case "lastMonth": {
         const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
         const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+        endDate.setHours(23, 59, 59, 999)
         return { start: startDate, end: endDate, label: "Last month" }
       }
       
