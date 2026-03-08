@@ -307,19 +307,43 @@ export default function CRMDashboard() {
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-muted-foreground">
-                      {lead.timestamp ? (() => {
+                      {(() => {
+                        if (!lead.timestamp) return 'N/A'
                         try {
-                          const date = new Date(lead.timestamp)
-                          if (isNaN(date.getTime())) return 'N/A'
+                          // Handle different timestamp formats
+                          let dateStr = String(lead.timestamp)
+                          
+                          // Try to parse ISO format or Unix timestamp
+                          let date: Date
+                          
+                          // Check if it's a Unix timestamp (number)
+                          if (typeof lead.timestamp === 'number') {
+                            date = new Date(lead.timestamp)
+                          } 
+                          // Check if it's ISO string
+                          else if (dateStr.includes('T')) {
+                            date = new Date(dateStr)
+                          }
+                          // Try direct parse
+                          else {
+                            date = new Date(dateStr)
+                          }
+                          
+                          if (isNaN(date.getTime())) {
+                            console.log('Invalid date:', lead.timestamp)
+                            return 'N/A'
+                          }
+                          
                           return date.toLocaleDateString('id-ID', {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric'
                           })
-                        } catch {
+                        } catch (e) {
+                          console.log('Date parse error:', e, lead.timestamp)
                           return 'N/A'
                         }
-                      })() : 'N/A'}
+                      })()}
                     </span>
                   </td>
                 </tr>

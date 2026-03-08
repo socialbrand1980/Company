@@ -306,19 +306,35 @@ export default function CRMPipelinePage() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-white/[0.05]">
                         <Calendar className="h-3 w-3" />
                         <span>
-                          {lead.timestamp ? (() => {
+                          {(() => {
+                            if (!lead.timestamp) return 'N/A'
                             try {
-                              const date = new Date(lead.timestamp)
-                              if (isNaN(date.getTime())) return 'N/A'
+                              let dateStr = String(lead.timestamp)
+                              let date: Date
+                              
+                              if (typeof lead.timestamp === 'number') {
+                                date = new Date(lead.timestamp)
+                              } else if (dateStr.includes('T')) {
+                                date = new Date(dateStr)
+                              } else {
+                                date = new Date(dateStr)
+                              }
+                              
+                              if (isNaN(date.getTime())) {
+                                console.log('Invalid date in pipeline:', lead.timestamp)
+                                return 'N/A'
+                              }
+                              
                               return date.toLocaleDateString('id-ID', {
                                 day: 'numeric',
                                 month: 'short',
                                 year: 'numeric'
                               })
-                            } catch {
+                            } catch (e) {
+                              console.log('Date parse error:', e, lead.timestamp)
                               return 'N/A'
                             }
-                          })() : 'N/A'}
+                          })()}
                         </span>
                       </div>
                     </div>
