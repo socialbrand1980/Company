@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, Calendar, PieChart, Activity, ChartBar } from "lucide-react"
+import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, PieChart, Activity, ChartBar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
+import { DateFilter } from "@/components/date-filter"
 
 interface Lead {
   leadstatus: string
@@ -32,9 +33,11 @@ interface MonthlyData {
 export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
-  const [selectedYear, setSelectedYear] = useState<number | "">("")
-  const [selectedMonth, setSelectedMonth] = useState<number | "">("")
-  const [selectedDay, setSelectedDay] = useState<number | "">("")
+  const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null; label: string }>({
+    startDate: null,
+    endDate: null,
+    label: "Last 7 days"
+  })
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
 
   useEffect(() => {
@@ -54,42 +57,42 @@ export default function CRMAnalyticsPage() {
     fetchLeads()
   }, [])
 
-  // Process revenue data based on selected filters
+  // Process revenue data based on selected date range
   useEffect(() => {
     if (leads.length === 0) return
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const data: { [key: string]: MonthlyData } = {}
 
+    const startDate = dateRange.startDate
+    const endDate = dateRange.endDate
+
     leads.forEach((lead: Lead) => {
       if (lead.leadstatus !== 'Closed Won') return
       
-      const date = new Date(lead.timestamp || Date.now())
-      const year = date.getFullYear()
-      const month = date.getMonth()
-      const day = date.getDate()
+      const leadDate = new Date(lead.timestamp || Date.now())
       
-      // Filter by selected year, month, day
-      if (selectedYear !== "" && year !== selectedYear) return
-      if (selectedMonth !== "" && month !== selectedMonth) return
-      if (selectedDay !== "" && day !== selectedDay) return
+      // Filter by date range
+      if (startDate && leadDate < startDate) return
+      if (endDate && leadDate > endDate) return
       
-      // Group by selected granularity
+      const year = leadDate.getFullYear()
+      const month = leadDate.getMonth()
+      const day = leadDate.getDate()
+      
+      // Group by day if range is small, otherwise by month
+      const rangeDays = startDate && endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : 30
+      const groupByDay = rangeDays <= 31
+      
       let key: string
       let label: string
       
-      if (selectedDay !== "") {
+      if (groupByDay) {
         key = `${year}-${month}-${day}`
         label = `${day}`
-      } else if (selectedMonth !== "") {
-        key = `${year}-${month}`
-        label = `${day}`
-      } else if (selectedYear !== "") {
+      } else {
         key = `${year}-${month}`
         label = monthNames[month]
-      } else {
-        key = `${year}`
-        label = `${year}`
       }
       
       const budgetValue = typeof lead.budget === 'string' 
@@ -112,13 +115,12 @@ export default function CRMAnalyticsPage() {
     })
 
     const sortedData = Object.values(data).sort((a, b) => {
-      if (selectedDay !== "") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
-      if (selectedMonth !== "") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      if (a.year !== b.year) return a.year - b.year
       return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
     setMonthlyData(sortedData)
-  }, [leads, selectedYear, selectedMonth, selectedDay])
+  }, [leads, dateRange])
 
   // Calculate stats
   const stats = {
@@ -208,46 +210,7 @@ export default function CRMAnalyticsPage() {
             <p className="text-sm text-muted-foreground mt-1">Complete insights from leads to closed deals</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Year Filter */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value === "" ? "" : Number(e.target.value))}
-              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-            >
-              <option value="">All Years</option>
-              {Array.from(new Set(leads.map((l: Lead) => {
-                const date = new Date(l.timestamp || Date.now())
-                return date.getFullYear()
-              }).filter(year => !isNaN(year)))).sort((a, b) => b - a).map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-            
-            {/* Month Filter */}
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value === "" ? "" : Number(e.target.value))}
-              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              disabled={selectedYear === ""}
-            >
-              <option value="">All Months</option>
-              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
-                <option key={i} value={i}>{month}</option>
-              ))}
-            </select>
-            
-            {/* Day Filter */}
-            <select
-              value={selectedDay}
-              onChange={(e) => setSelectedDay(e.target.value === "" ? "" : Number(e.target.value))}
-              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              disabled={selectedMonth === ""}
-            >
-              <option value="">All Days</option>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                <option key={day} value={day}>{day}</option>
-              ))}
-            </select>
+            <DateFilter onDateRangeChange={setDateRange} />
             
             <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
               <Download className="h-4 w-4" />
@@ -326,16 +289,7 @@ export default function CRMAnalyticsPage() {
               <BarChart3 className="h-6 w-6 text-green-400" />
               <div>
                 <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {selectedDay !== "" 
-                    ? `Revenue for ${selectedDay} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
-                    : selectedMonth !== ""
-                    ? `Revenue for ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
-                    : selectedYear !== ""
-                    ? `Revenue for ${selectedYear}`
-                    : `All time revenue overview`
-                  }
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">{dateRange.label}</p>
               </div>
             </div>
           </div>
