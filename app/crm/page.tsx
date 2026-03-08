@@ -16,50 +16,60 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { formatCompactIDR } from "@/lib/format-currency"
 
-// Helper function to format timestamp
+// Helper function to format timestamp - simple DD/MM/YYYY format
 function formatTimestamp(timestamp: any): string {
   if (!timestamp) return 'N/A'
   
   try {
-    console.log('Raw timestamp:', timestamp, 'type:', typeof timestamp)
-    let dateStr = String(timestamp)
     let date: Date
     
-    // Check if it's a Unix timestamp (number or numeric string)
-    if (typeof timestamp === 'number' || /^\d+$/.test(dateStr)) {
-      const ts = Number(timestamp)
-      // If timestamp is in seconds (10 digits), convert to milliseconds
-      if (ts < 10000000000) {
-        date = new Date(ts * 1000)
+    // Try different parsing approaches
+    if (typeof timestamp === 'number') {
+      date = new Date(timestamp)
+    } else {
+      const dateStr = String(timestamp)
+      // Handle various string formats
+      if (dateStr.includes('T')) {
+        date = new Date(dateStr)
+      } else if (dateStr.includes('/')) {
+        // Format: DD/MM/YYYY or MM/DD/YYYY
+        const parts = dateStr.split('/')
+        if (parts.length === 3) {
+          // Assume DD/MM/YYYY
+          date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+        } else {
+          date = new Date(dateStr)
+        }
+      } else if (dateStr.includes('-')) {
+        // Format: YYYY-MM-DD or DD-MM-YYYY
+        const parts = dateStr.split('-')
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            // YYYY-MM-DD
+            date = new Date(dateStr)
+          } else {
+            // DD-MM-YYYY
+            date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+          }
+        } else {
+          date = new Date(dateStr)
+        }
       } else {
-        date = new Date(ts)
+        date = new Date(dateStr)
       }
-    }
-    // ISO format or standard date string
-    else if (dateStr.includes('T') || dateStr.includes('-')) {
-      date = new Date(dateStr)
-    }
-    // Google Sheets might return formatted date like "2025-03-08 10:30:00"
-    else if (dateStr.includes(' ')) {
-      date = new Date(dateStr.replace(' ', 'T'))
-    }
-    // Try direct parse as last resort
-    else {
-      date = new Date(dateStr)
     }
     
     if (isNaN(date.getTime())) {
-      console.log('Invalid date after parsing:', timestamp)
       return 'N/A'
     }
     
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
-  } catch (e) {
-    console.log('Date parse error:', e, timestamp)
+    // Simple format: DD/MM/YYYY
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    
+    return `${day}/${month}/${year}`
+  } catch {
     return 'N/A'
   }
 }

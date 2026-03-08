@@ -17,49 +17,52 @@ import {
 import { Button } from "@/components/ui/button"
 import { formatCompactIDR, formatIDR } from "@/lib/format-currency"
 
-// Helper function to format timestamp
+// Helper function to format timestamp - simple DD/MM/YYYY format
 function formatTimestamp(timestamp: any): string {
   if (!timestamp) return 'N/A'
   
   try {
-    console.log('Pipeline timestamp:', timestamp, 'type:', typeof timestamp)
-    let dateStr = String(timestamp)
     let date: Date
     
-    // Check if it's a Unix timestamp (number or numeric string)
-    if (typeof timestamp === 'number' || /^\d+$/.test(dateStr)) {
-      const ts = Number(timestamp)
-      if (ts < 10000000000) {
-        date = new Date(ts * 1000)
+    if (typeof timestamp === 'number') {
+      date = new Date(timestamp)
+    } else {
+      const dateStr = String(timestamp)
+      if (dateStr.includes('T')) {
+        date = new Date(dateStr)
+      } else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/')
+        if (parts.length === 3) {
+          date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+        } else {
+          date = new Date(dateStr)
+        }
+      } else if (dateStr.includes('-')) {
+        const parts = dateStr.split('-')
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            date = new Date(dateStr)
+          } else {
+            date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+          }
+        } else {
+          date = new Date(dateStr)
+        }
       } else {
-        date = new Date(ts)
+        date = new Date(dateStr)
       }
-    }
-    // ISO format or standard date string
-    else if (dateStr.includes('T') || dateStr.includes('-')) {
-      date = new Date(dateStr)
-    }
-    // Google Sheets format with space
-    else if (dateStr.includes(' ')) {
-      date = new Date(dateStr.replace(' ', 'T'))
-    }
-    // Try direct parse
-    else {
-      date = new Date(dateStr)
     }
     
     if (isNaN(date.getTime())) {
-      console.log('Invalid date:', timestamp)
       return 'N/A'
     }
     
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
-  } catch (e) {
-    console.log('Date parse error:', e, timestamp)
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    
+    return `${day}/${month}/${year}`
+  } catch {
     return 'N/A'
   }
 }
