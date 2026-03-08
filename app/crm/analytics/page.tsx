@@ -350,7 +350,7 @@ export default function CRMAnalyticsPage() {
             </div>
             <div className="space-y-3">
               {Object.entries(industryBreakdown)
-                .sort(([,a]: any[,b]: any) => b - a)
+                .sort(([,a]: any, [,b]: any) => b - a)
                 .slice(0, 5)
                 .map(([industry, count]: [string, any], index) => (
                   <div key={industry}>
