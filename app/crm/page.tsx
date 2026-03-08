@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { formatCompactIDR } from "@/lib/format-currency"
+import { formatCompactIDR, formatIDR } from "@/lib/format-currency"
 
 // Helper function to format timestamp - simple DD/MM/YYYY format
 function formatTimestamp(timestamp: any): string {
