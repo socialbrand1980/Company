@@ -112,6 +112,16 @@ export function BrandIntakeForm() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleCheckboxChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => {
+      const current = prev[field] as string[]
+      const updated = current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value]
+      return { ...prev, [field]: updated }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
