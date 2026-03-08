@@ -75,6 +75,7 @@ export default function CRMLeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showStatusDropdown, setShowStatusDropdown] = useState<string | null>(null)
   const [updatingEmail, setUpdatingEmail] = useState<string | null>(null)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -150,6 +151,32 @@ export default function CRMLeadsPage() {
     } finally {
       setUpdatingEmail(null)
       setShowStatusDropdown(null)
+    }
+  }
+
+  const updateLead = async (email: string, updates: Partial<Lead>) => {
+    setUpdatingEmail(email)
+    try {
+      const response = await fetch('/api/crm/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          updates,
+        }),
+      })
+      
+      if (response.ok) {
+        await fetchLeads()
+        setEditingLead(null)
+      } else {
+        alert('Failed to update lead')
+      }
+    } catch (error) {
+      console.error('Failed to update lead:', error)
+      alert('Failed to update lead')
+    } finally {
+      setUpdatingEmail(null)
     }
   }
 
@@ -346,11 +373,14 @@ export default function CRMLeadsPage() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      <button 
+                        onClick={() => setEditingLead(lead)}
+                        className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors"
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </button>
                       <button className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
-                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                       </button>
                       <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors">
                         <Trash2 className="h-4 w-4 text-red-400" />
@@ -473,6 +503,162 @@ function InfoRow({ icon: Icon, label, value, isLink }: any) {
         ) : (
           <p className="text-sm text-white">{value}</p>
         )}
+      </div>
+    </div>
+  )
+}
+
+function EditLeadModal({ lead, onClose, onSave, saving }: { 
+  lead: Lead, 
+  onClose: () => void, 
+  onSave: (email: string, updates: Partial<Lead>) => void,
+  saving: boolean
+}) {
+  const [formData, setFormData] = useState({
+    brandname: lead.brandname || '',
+    industry: lead.industry || '',
+    budget: lead.budget || '',
+    fullname: lead.fullname || '',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    leadstatus: lead.leadstatus || 'New',
+    notes: lead.notes || '',
+    timeline: lead.timeline || '',
+    servicesneeded: lead.servicesneeded || '',
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(lead.email, formData)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl glass-card rounded-xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.05]">
+          <h2 className="text-xl font-bold text-white">Edit Lead</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Brand Name</label>
+              <input
+                type="text"
+                value={formData.brandname}
+                onChange={(e) => setFormData({...formData, brandname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Industry</label>
+              <input
+                type="text"
+                value={formData.industry}
+                onChange={(e) => setFormData({...formData, industry: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Budget</label>
+              <input
+                type="text"
+                value={formData.budget}
+                onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Timeline</label>
+              <input
+                type="text"
+                value={formData.timeline}
+                onChange={(e) => setFormData({...formData, timeline: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Full Name</label>
+              <input
+                type="text"
+                value={formData.fullname}
+                onChange={(e) => setFormData({...formData, fullname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Phone</label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Status</label>
+              <select
+                value={formData.leadstatus}
+                onChange={(e) => setFormData({...formData, leadstatus: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                {statusOptions.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-2 block">Services Needed</label>
+            <input
+              type="text"
+              value={formData.servicesneeded}
+              onChange={(e) => setFormData({...formData, servicesneeded: e.target.value})}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              placeholder="Comma separated"
+            />
+          </div>
+          
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-2 block">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              rows={4}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.05]">
+            <Button type="button" variant="outline" onClick={onClose} className="bg-white/[0.03] border-white/[0.08]">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white">
+              {saving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   )

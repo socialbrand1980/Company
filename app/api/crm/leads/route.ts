@@ -154,11 +154,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, updates } = body
+    const { email, updates, action = 'update' } = body
 
-    if (!email || !updates) {
+    if (!email && action !== 'create') {
       return NextResponse.json(
-        { error: 'Email and updates are required' },
+        { error: 'Email is required' },
         { status: 400 }
       )
     }
@@ -170,7 +170,7 @@ export async function PATCH(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        action: 'update',
+        action: action,
         email,
         updates,
       }),

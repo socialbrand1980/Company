@@ -9,7 +9,10 @@ import {
   User,
   Building2,
   RefreshCw,
-  Search
+  Search,
+  GripVertical,
+  Edit2,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -24,16 +27,26 @@ interface Lead {
   email: string
   phone: string
   leadstatus: string
+  notes: string
+  targetaudience: string
+  competitors: string
+  timeline: string
+  teamsize: string
+  yearfounded: string
+  targetmarket: string
+  primarygoal: string
+  runads: string
+  channels: string
 }
 
 const pipelineStages = [
-  { id: "New", color: "bg-blue-500", borderColor: "border-blue-500/20" },
-  { id: "Contacted", color: "bg-yellow-500", borderColor: "border-yellow-500/20" },
-  { id: "Discovery Call", color: "bg-purple-500", borderColor: "border-purple-500/20" },
-  { id: "Proposal Sent", color: "bg-orange-500", borderColor: "border-orange-500/20" },
-  { id: "Negotiation", color: "bg-pink-500", borderColor: "border-pink-500/20" },
-  { id: "Closed Won", color: "bg-green-500", borderColor: "border-green-500/20" },
-  { id: "Closed Lost", color: "bg-red-500", borderColor: "border-red-500/20" },
+  { id: "New", color: "bg-blue-500", borderColor: "border-blue-500/20", bgColor: "bg-blue-500/5" },
+  { id: "Contacted", color: "bg-yellow-500", borderColor: "border-yellow-500/20", bgColor: "bg-yellow-500/5" },
+  { id: "Discovery Call", color: "bg-purple-500", borderColor: "border-purple-500/20", bgColor: "bg-purple-500/5" },
+  { id: "Proposal Sent", color: "bg-orange-500", borderColor: "border-orange-500/20", bgColor: "bg-orange-500/5" },
+  { id: "Negotiation", color: "bg-pink-500", borderColor: "border-pink-500/20", bgColor: "bg-pink-500/5" },
+  { id: "Closed Won", color: "bg-green-500", borderColor: "border-green-500/20", bgColor: "bg-green-500/5" },
+  { id: "Closed Lost", color: "bg-red-500", borderColor: "border-red-500/20", bgColor: "bg-red-500/5" },
 ]
 
 export default function CRMPipelinePage() {
@@ -41,6 +54,9 @@ export default function CRMPipelinePage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [draggedLead, setDraggedLead] = useState<string | null>(null)
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [updatingEmail, setUpdatingEmail] = useState<string | null>(null)
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -71,17 +87,80 @@ export default function CRMPipelinePage() {
   const handleDragStart = (e: React.DragEvent, email: string) => {
     e.dataTransfer.setData('email', email)
     setDraggedLead(email)
+    e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, stageId: string) => {
     e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverStage(stageId)
   }
 
-  const handleDrop = (e: React.DragEvent, status: string) => {
+  const handleDragLeave = () => {
+    setDragOverStage(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, stageId: string) => {
     e.preventDefault()
+    setDragOverStage(null)
     const email = e.dataTransfer.getData('email')
-    // Update lead status logic here
+    
+    if (email) {
+      setUpdatingEmail(email)
+      try {
+        const response = await fetch('/api/crm/leads', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            updates: { leadStatus: stageId }
+          }),
+        })
+        
+        if (response.ok) {
+          await fetchLeads()
+        } else {
+          alert('Failed to update status')
+        }
+      } catch (error) {
+        console.error('Failed to update status:', error)
+        alert('Failed to update status')
+      } finally {
+        setUpdatingEmail(null)
+        setDraggedLead(null)
+      }
+    }
+  }
+
+  const handleDragEnd = () => {
     setDraggedLead(null)
+    setDragOverStage(null)
+  }
+
+  const updateLead = async (email: string, updates: Partial<Lead>) => {
+    setUpdatingEmail(email)
+    try {
+      const response = await fetch('/api/crm/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          updates,
+        }),
+      })
+      
+      if (response.ok) {
+        await fetchLeads()
+        setEditingLead(null)
+      } else {
+        alert('Failed to update lead')
+      }
+    } catch (error) {
+      console.error('Failed to update lead:', error)
+      alert('Failed to update lead')
+    } finally {
+      setUpdatingEmail(null)
+    }
   }
 
   if (loading) {
@@ -125,7 +204,7 @@ export default function CRMPipelinePage() {
       </div>
 
       {/* Pipeline Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-250px)]">
         {pipelineStages.map((stage) => {
           const stageLeads = getLeadsByStatus(stage.id)
           const totalValue = stageLeads.reduce((acc, lead) => {
@@ -136,12 +215,15 @@ export default function CRMPipelinePage() {
           return (
             <div
               key={stage.id}
-              className={`flex-shrink-0 w-80 rounded-xl bg-white/[0.02] border ${stage.borderColor} overflow-hidden`}
-              onDragOver={handleDragOver}
+              className={`flex-shrink-0 w-80 rounded-xl bg-white/[0.02] border ${stage.borderColor} overflow-hidden transition-colors ${
+                dragOverStage === stage.id ? 'bg-white/[0.05] border-blue-500/40' : ''
+              }`}
+              onDragOver={(e) => handleDragOver(e, stage.id)}
+              onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.id)}
             >
               {/* Stage Header */}
-              <div className="p-4 border-b border-white/[0.05]">
+              <div className={`p-4 border-b border-white/[0.05] ${stage.bgColor}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${stage.color}`} />
@@ -163,23 +245,33 @@ export default function CRMPipelinePage() {
                     key={lead.email}
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead.email)}
-                    className={`glass-card p-4 rounded-lg cursor-move hover:bg-white/[0.05] transition-all ${
+                    onDragEnd={handleDragEnd}
+                    className={`glass-card p-4 rounded-lg cursor-grab active:cursor-grabbing hover:bg-white/[0.05] transition-all ${
                       draggedLead === lead.email ? 'opacity-50 scale-95' : ''
-                    }`}
+                    } ${updatingEmail === lead.email ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/[0.08] flex items-center justify-center">
+                      <div className="flex items-center gap-2 flex-1">
+                        <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/[0.08] flex items-center justify-center flex-shrink-0">
                           <Building2 className="h-4 w-4 text-blue-400" />
                         </div>
-                        <div>
-                          <p className="font-medium text-white text-sm">{lead.brandname}</p>
-                          <p className="text-xs text-muted-foreground">{lead.industry}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-white text-sm truncate">{lead.brandname}</p>
+                          <p className="text-xs text-muted-foreground truncate">{lead.industry}</p>
                         </div>
                       </div>
-                      <button className="p-1 hover:bg-white/5 rounded transition-colors">
-                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setEditingLead(lead)}
+                          className="p-1 hover:bg-white/5 rounded transition-colors"
+                        >
+                          <Edit2 className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                        <button className="p-1 hover:bg-white/5 rounded transition-colors">
+                          <MoreHorizontal className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -190,7 +282,7 @@ export default function CRMPipelinePage() {
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <User className="h-3 w-3" />
-                        <span>{lead.fullname}</span>
+                        <span className="truncate">{lead.fullname}</span>
                       </div>
 
                       <div className="flex flex-wrap gap-1 pt-2">
@@ -231,6 +323,172 @@ export default function CRMPipelinePage() {
             </div>
           )
         })}
+      </div>
+
+      {/* Edit Lead Modal */}
+      {editingLead && (
+        <EditLeadModal
+          lead={editingLead}
+          onClose={() => setEditingLead(null)}
+          onSave={updateLead}
+          saving={updatingEmail === editingLead.email}
+        />
+      )}
+    </div>
+  )
+}
+
+function EditLeadModal({ lead, onClose, onSave, saving }: { 
+  lead: Lead, 
+  onClose: () => void, 
+  onSave: (email: string, updates: Partial<Lead>) => void,
+  saving: boolean
+}) {
+  const [formData, setFormData] = useState({
+    brandname: lead.brandname || '',
+    industry: lead.industry || '',
+    budget: lead.budget || '',
+    fullname: lead.fullname || '',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    leadstatus: lead.leadstatus || 'New',
+    notes: lead.notes || '',
+    timeline: lead.timeline || '',
+    servicesneeded: lead.servicesneeded || '',
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(lead.email, formData)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl glass-card rounded-xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.05]">
+          <h2 className="text-xl font-bold text-white">Edit Lead</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Brand Name</label>
+              <input
+                type="text"
+                value={formData.brandname}
+                onChange={(e) => setFormData({...formData, brandname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Industry</label>
+              <input
+                type="text"
+                value={formData.industry}
+                onChange={(e) => setFormData({...formData, industry: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Budget</label>
+              <input
+                type="text"
+                value={formData.budget}
+                onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Timeline</label>
+              <input
+                type="text"
+                value={formData.timeline}
+                onChange={(e) => setFormData({...formData, timeline: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Full Name</label>
+              <input
+                type="text"
+                value={formData.fullname}
+                onChange={(e) => setFormData({...formData, fullname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Phone</label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Status</label>
+              <select
+                value={formData.leadstatus}
+                onChange={(e) => setFormData({...formData, leadstatus: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                {pipelineStages.map(stage => (
+                  <option key={stage.id} value={stage.id}>{stage.id}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-2 block">Services Needed</label>
+            <input
+              type="text"
+              value={formData.servicesneeded}
+              onChange={(e) => setFormData({...formData, servicesneeded: e.target.value})}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              placeholder="Comma separated"
+            />
+          </div>
+          
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-2 block">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              rows={4}
+              className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.05]">
+            <Button type="button" variant="outline" onClick={onClose} className="bg-white/[0.03] border-white/[0.08]">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white">
+              {saving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   )
