@@ -229,57 +229,65 @@ export default function CRMAnalyticsPage() {
   }, [leads, dateRange])
 
   // Calculate stats (filtered by date range)
-  const filteredLeads = leads.filter((lead: Lead) => {
-    // Only filter Closed Won leads by date for revenue metrics
-    if (lead.leadstatus !== 'Closed Won') return true
-    
-    const leadDate = new Date(lead.timestamp)
-    
-    // If no date range selected, include all
-    if (!dateRange.startDate && !dateRange.endDate) return true
-    
-    // Filter by date range
-    if (dateRange.startDate && leadDate < dateRange.startDate) return false
-    if (dateRange.endDate && leadDate > dateRange.endDate) return false
-    
-    return true
-  })
+  const getFilteredStats = () => {
+    const filteredLeads = leads.filter((lead: Lead) => {
+      const leadDate = new Date(lead.timestamp)
+      
+      // If no date range selected, include all
+      if (!dateRange.startDate && !dateRange.endDate) return true
+      
+      // Filter by date range
+      if (dateRange.startDate && leadDate < dateRange.startDate) return false
+      if (dateRange.endDate && leadDate > dateRange.endDate) return false
+      
+      return true
+    })
 
-  const stats = {
-    totalLeads: filteredLeads.length,
-    newLeads: filteredLeads.filter((l: Lead) => l.leadstatus === 'New').length,
-    contacted: filteredLeads.filter((l: Lead) => l.leadstatus === 'Contacted').length,
-    discovery: filteredLeads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length,
-    proposal: filteredLeads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length,
-    negotiation: filteredLeads.filter((l: Lead) => l.leadstatus === 'Negotiation').length,
-    closedWon: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
-    closedLost: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length,
-    totalRevenue: filteredLeads
-      .filter((l: Lead) => l.leadstatus === 'Closed Won')
-      .reduce((acc: number, l: Lead) => {
-        const budgetValue = typeof l.budget === 'string' 
-          ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
-          : (l.budget as number) || 0
-        return acc + budgetValue
-      }, 0),
-    conversionRate: filteredLeads.length > 0 
-      ? ((filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / filteredLeads.length) * 100).toFixed(1) 
-      : "0",
-    avgDealSize: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length > 0 
-      ? filteredLeads
-          .filter((l: Lead) => l.leadstatus === 'Closed Won')
-          .reduce((acc: number, l: Lead) => {
-            const budgetValue = typeof l.budget === 'string' 
-              ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
-              : (l.budget as number) || 0
-            return acc + budgetValue
-          }, 0) / filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length
-      : 0
+    return {
+      totalLeads: filteredLeads.length,
+      newLeads: filteredLeads.filter((l: Lead) => l.leadstatus === 'New').length,
+      contacted: filteredLeads.filter((l: Lead) => l.leadstatus === 'Contacted').length,
+      discovery: filteredLeads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length,
+      proposal: filteredLeads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length,
+      negotiation: filteredLeads.filter((l: Lead) => l.leadstatus === 'Negotiation').length,
+      closedWon: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
+      closedLost: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length,
+      totalRevenue: filteredLeads
+        .filter((l: Lead) => l.leadstatus === 'Closed Won')
+        .reduce((acc: number, l: Lead) => {
+          const budgetValue = typeof l.budget === 'string' 
+            ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+            : (l.budget as number) || 0
+          return acc + budgetValue
+        }, 0),
+      conversionRate: filteredLeads.length > 0 
+        ? ((filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / filteredLeads.length) * 100).toFixed(1) 
+        : "0",
+      avgDealSize: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length > 0 
+        ? filteredLeads
+            .filter((l: Lead) => l.leadstatus === 'Closed Won')
+            .reduce((acc: number, l: Lead) => {
+              const budgetValue = typeof l.budget === 'string' 
+                ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+                : (l.budget as number) || 0
+              return acc + budgetValue
+            }, 0) / filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length
+        : 0
+    }
   }
 
-  // Funnel data
+  const [filteredStats, setFilteredStats] = useState(getFilteredStats())
+
+  // Update stats when dateRange or leads change
+  useEffect(() => {
+    setFilteredStats(getFilteredStats())
+  }, [leads, dateRange])
+
+  const stats = filteredStats
+
+  // Funnel data (using filtered stats)
   const funnelData: FunnelData[] = [
-    { stage: "New Leads", count: stats.newLeads, percentage: 100, color: "bg-blue-500" },
+    { stage: "New Leads", count: stats.newLeads, percentage: stats.totalLeads > 0 ? (stats.newLeads / stats.totalLeads) * 100 : 0, color: "bg-blue-500" },
     { stage: "Contacted", count: stats.contacted, percentage: stats.totalLeads > 0 ? (stats.contacted / stats.totalLeads) * 100 : 0, color: "bg-yellow-500" },
     { stage: "Discovery Call", count: stats.discovery, percentage: stats.totalLeads > 0 ? (stats.discovery / stats.totalLeads) * 100 : 0, color: "bg-purple-500" },
     { stage: "Proposal", count: stats.proposal, percentage: stats.totalLeads > 0 ? (stats.proposal / stats.totalLeads) * 100 : 0, color: "bg-orange-500" },
@@ -287,13 +295,21 @@ export default function CRMAnalyticsPage() {
     { stage: "Closed Won", count: stats.closedWon, percentage: stats.totalLeads > 0 ? (stats.closedWon / stats.totalLeads) * 100 : 0, color: "bg-green-500" }
   ]
 
-  // Industry breakdown (filtered by date range)
-  const industryBreakdown = filteredLeads.reduce((acc: any, lead: Lead) => {
-    const industry = lead.industry || 'Other'
-    if (!acc[industry]) acc[industry] = 0
-    acc[industry]++
-    return acc
-  }, {})
+  // Industry breakdown (using filtered stats)
+  const industryBreakdown = leads
+    .filter((lead: Lead) => {
+      const leadDate = new Date(lead.timestamp)
+      if (!dateRange.startDate && !dateRange.endDate) return true
+      if (dateRange.startDate && leadDate < dateRange.startDate) return false
+      if (dateRange.endDate && leadDate > dateRange.endDate) return false
+      return true
+    })
+    .reduce((acc: any, lead: Lead) => {
+      const industry = lead.industry || 'Other'
+      if (!acc[industry]) acc[industry] = 0
+      acc[industry]++
+      return acc
+    }, {})
 
   const exportData = () => {
     const headers = ['Stage', 'Count', 'Percentage']
