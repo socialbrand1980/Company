@@ -930,23 +930,27 @@ function DetailRow({ icon: Icon, label, value, isLink }: { icon: any, label: str
   )
 }
 
-// Add Lead Modal
+// Add Lead Modal - Same fields as Work With Us form
 function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: any) => Promise<void> }) {
   const [formData, setFormData] = useState({
-    brandname: '',
+    brandName: '',
     website: '',
     industry: '',
-    targetmarket: '',
-    primarygoal: '',
+    targetMarket: '',
+    yearFounded: '',
+    teamSize: '',
+    primaryGoal: '',
+    runAds: '',
+    channels: [] as string[],
     budget: '',
+    targetAudience: '',
+    competitors: '',
     timeline: '',
-    servicesneeded: '',
-    fullname: '',
+    servicesNeeded: '',
+    fullName: '',
     email: '',
     phone: '',
     role: '',
-    leadstatus: 'New',
-    notes: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -954,13 +958,88 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
     e.preventDefault()
     setSaving(true)
     try {
-      await onAdd(formData)
+      // Map form data to spreadsheet column names
+      const leadData = {
+        brandname: formData.brandName,
+        website: formData.website,
+        industry: formData.industry,
+        targetmarket: formData.targetMarket,
+        yearfounded: formData.yearFounded,
+        teamsize: formData.teamSize,
+        primarygoal: formData.primaryGoal,
+        runads: formData.runAds,
+        channels: formData.channels.join(', '),
+        budget: formData.budget,
+        targetaudience: formData.targetAudience,
+        competitors: formData.competitors,
+        timeline: formData.timeline,
+        servicesneeded: formData.servicesNeeded,
+        fullname: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        leadstatus: 'New',
+        notes: '',
+      }
+      await onAdd(leadData)
     } catch (error) {
       console.error('Failed to add lead:', error)
     } finally {
       setSaving(false)
     }
   }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleCheckboxChange = (field: string, value: string) => {
+    setFormData(prev => {
+      const current = prev[field as keyof typeof prev] as string[]
+      const updated = current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value]
+      return { ...prev, [field]: updated }
+    })
+  }
+
+  const industryOptions = [
+    "Beauty & Skincare",
+    "Fashion",
+    "Food & Beverage",
+    "Technology",
+    "E-commerce",
+    "Education",
+    "Health & Beauty",
+    "Entertainment",
+    "Real Estate",
+    "Other"
+  ]
+
+  const teamSizeOptions = [
+    "1-5",
+    "6-20",
+    "21-50",
+    "51-200",
+    "200+"
+  ]
+
+  const channelOptions = [
+    "Meta Ads",
+    "Google Ads",
+    "TikTok Ads",
+    "SEO",
+    "Email Marketing",
+    "Organic Social Media",
+    "None"
+  ]
+
+  const timelineOptions = [
+    "Immediately",
+    "Within 1 month",
+    "1 – 3 months",
+    "Just exploring"
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -977,156 +1056,298 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Brand Information */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Brand Name *</label>
-              <input
-                type="text"
-                value={formData.brandname}
-                onChange={(e) => setFormData({...formData, brandname: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                required
-              />
+          {/* Brand Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-400" />
+              Brand Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Brand Name *</label>
+                <input
+                  type="text"
+                  value={formData.brandName}
+                  onChange={(e) => handleInputChange('brandName', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="Your brand name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Website / URL</label>
+                <input
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="https://yourbrand.com"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Industry *</label>
+                <select
+                  value={formData.industry}
+                  onChange={(e) => handleInputChange('industry', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  required
+                >
+                  <option value="">Select industry</option>
+                  {industryOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Target Market *</label>
+                <input
+                  type="text"
+                  value={formData.targetMarket}
+                  onChange={(e) => handleInputChange('targetMarket', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="e.g., Indonesia, Southeast Asia"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Year Founded</label>
+                <input
+                  type="text"
+                  value={formData.yearFounded}
+                  onChange={(e) => handleInputChange('yearFounded', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="e.g., 2020"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Team Size</label>
+                <select
+                  value={formData.teamSize}
+                  onChange={(e) => handleInputChange('teamSize', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                >
+                  <option value="">Select team size</option>
+                  {teamSizeOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Industry *</label>
-              <input
-                type="text"
-                value={formData.industry}
-                onChange={(e) => setFormData({...formData, industry: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Website</label>
-              <input
-                type="url"
-                value={formData.website}
-                onChange={(e) => setFormData({...formData, website: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Target Market</label>
-              <input
-                type="text"
-                value={formData.targetmarket}
-                onChange={(e) => setFormData({...formData, targetmarket: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              />
-            </div>
+          </div>
 
-            {/* Contact Information */}
+          {/* Business Goals */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Target className="h-5 w-5 text-purple-400" />
+              Business Goals
+            </h3>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Full Name *</label>
-              <input
-                type="text"
-                value={formData.fullname}
-                onChange={(e) => setFormData({...formData, fullname: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Phone</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Role</label>
-              <input
-                type="text"
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              />
-            </div>
-
-            {/* Business Information */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Budget</label>
-              <input
-                type="text"
-                value={formData.budget}
-                onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Timeline</label>
-              <select
-                value={formData.timeline}
-                onChange={(e) => setFormData({...formData, timeline: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              >
-                <option value="">Select timeline</option>
-                <option value="Immediately">Immediately</option>
-                <option value="Within 1 month">Within 1 month</option>
-                <option value="1-3 months">1-3 months</option>
-                <option value="Just exploring">Just exploring</option>
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Primary Goal</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Apa tujuan utama marketing Anda? *</label>
               <textarea
-                value={formData.primarygoal}
-                onChange={(e) => setFormData({...formData, primarygoal: e.target.value})}
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
+                value={formData.primaryGoal}
+                onChange={(e) => handleInputChange('primaryGoal', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+                rows={3}
+                placeholder="Contoh: Meningkatkan brand awareness, generate 100 leads per bulan, launch produk baru, dll."
+                required
               />
+              <p className="text-xs text-muted-foreground mt-2">Jelaskan secara detail tujuan marketing Anda</p>
             </div>
-            <div className="md:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Services Needed</label>
-              <textarea
-                value={formData.servicesneeded}
-                onChange={(e) => setFormData({...formData, servicesneeded: e.target.value})}
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
-                placeholder="Comma separated (e.g., Social Media Management, Content Production)"
-              />
-            </div>
+          </div>
 
-            {/* Status & Notes */}
+          {/* Current Marketing */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-green-400" />
+              Current Marketing Activity
+            </h3>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Status</label>
-              <select
-                value={formData.leadstatus}
-                onChange={(e) => setFormData({...formData, leadstatus: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              >
-                <option value="New">New</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Discovery Call">Discovery Call</option>
-                <option value="Proposal Sent">Proposal Sent</option>
-                <option value="Negotiation">Negotiation</option>
-                <option value="Closed Won">Closed Won</option>
-                <option value="Closed Lost">Closed Lost</option>
-              </select>
+              <label className="text-sm font-medium text-foreground mb-3 block">Apakah brand Anda saat ini menjalankan digital advertising?</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-3 p-4 rounded-lg border border-border/50 hover:border-primary/30 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="runAds"
+                    value="Yes"
+                    checked={formData.runAds === 'Yes'}
+                    onChange={(e) => handleInputChange('runAds', e.target.value)}
+                    className="w-4 h-4 text-primary"
+                  />
+                  <span className="text-sm text-foreground">Yes</span>
+                </label>
+                <label className="flex items-center gap-3 p-4 rounded-lg border border-border/50 hover:border-primary/30 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="runAds"
+                    value="No"
+                    checked={formData.runAds === 'No'}
+                    onChange={(e) => handleInputChange('runAds', e.target.value)}
+                    className="w-4 h-4 text-primary"
+                  />
+                  <span className="text-sm text-foreground">No</span>
+                </label>
+              </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Notes</label>
-              <input
-                type="text"
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              <label className="text-sm font-medium text-foreground mb-3 block">Current Marketing Channels</label>
+              <div className="grid grid-cols-2 gap-3">
+                {channelOptions.map(option => (
+                  <label
+                    key={option}
+                    className="flex items-center gap-3 p-4 rounded-lg border border-border/50 hover:border-primary/30 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.channels.includes(option)}
+                      onChange={(e) => handleCheckboxChange('channels', option)}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <span className="text-sm text-foreground">{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Budget & Timeline */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-orange-400" />
+              Budget & Timeline
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Monthly Budget (Rp) *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">Rp</span>
+                  <input
+                    type="text"
+                    value={formData.budget ? formData.budget.replace(/[^0-9]/g, '') : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      handleInputChange('budget', value)
+                    }}
+                    className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                    placeholder="5.000.000"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">Masukkan budget marketing bulanan Anda</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Project Timeline *</label>
+                <select
+                  value={formData.timeline}
+                  onChange={(e) => handleInputChange('timeline', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  required
+                >
+                  <option value="">Select timeline</option>
+                  {timelineOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Target Audience</label>
+                <textarea
+                  value={formData.targetAudience}
+                  onChange={(e) => handleInputChange('targetAudience', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+                  rows={3}
+                  placeholder="Describe your target audience..."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Competitors</label>
+                <textarea
+                  value={formData.competitors}
+                  onChange={(e) => handleInputChange('competitors', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+                  rows={3}
+                  placeholder="Who are your main competitors?"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Services Needed */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-cyan-400" />
+              Services Needed
+            </h3>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Layanan yang Anda Butuhkan *</label>
+              <textarea
+                value={formData.servicesNeeded}
+                onChange={(e) => handleInputChange('servicesNeeded', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+                rows={4}
+                placeholder={`Contoh:
+• Social Media Management untuk Instagram & TikTok
+• Content Production (4 reels + 8 feed posts per bulan)
+• Paid Ads di Meta & Google
+• Influencer Marketing campaign`}
+                required
               />
+              <p className="text-xs text-muted-foreground mt-2">Sebutkan semua layanan yang Anda butuhkan (gunakan bullet points untuk lebih jelas)</p>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <User className="h-5 w-5 text-pink-400" />
+              Contact Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Full Name *</label>
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="Your full name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Company Role *</label>
+                <input
+                  type="text"
+                  value={formData.role}
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="e.g., Founder, Marketing Manager"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Email Address *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Phone / WhatsApp *</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors"
+                  placeholder="08123456789"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -1142,7 +1363,7 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
                   Add Lead
                 </>
               )}
