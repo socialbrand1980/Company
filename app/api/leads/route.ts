@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
       notes: '',
     }
 
+    console.log('Sending to Google Sheets:', formData)
+    console.log('primaryGoal:', formData.primaryGoal)
+    console.log('servicesNeeded:', formData.servicesNeeded)
+
     // Send to Google Apps Script Webhook
     const response = await fetch(APPS_SCRIPT_WEBHOOK_URL, {
       method: 'POST',
@@ -51,6 +55,8 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(formData),
     })
+
+    console.log('Apps Script response status:', response.status)
 
     if (!response.ok) {
       throw new Error('Failed to send data to Google Apps Script')

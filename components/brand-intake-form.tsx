@@ -12,23 +12,23 @@ interface FormData {
   targetMarket: string
   yearFounded: string
   teamSize: string
-  
+
   // Business Goals
   primaryGoal: string
-  
+
   // Current Marketing
   runAds: string
   channels: string[]
-  
+
   // Budget & Timeline
   budget: string
   targetAudience: string
   competitors: string
   timeline: string
-  
+
   // Services
-  servicesNeeded: string[]
-  
+  servicesNeeded: string
+
   // Contact Information
   fullName: string
   email: string
@@ -50,7 +50,7 @@ const initialData: FormData = {
   targetAudience: "",
   competitors: "",
   timeline: "",
-  servicesNeeded: [],
+  servicesNeeded: "",
   fullName: "",
   email: "",
   phone: "",
