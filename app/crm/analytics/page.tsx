@@ -254,13 +254,16 @@ export default function CRMAnalyticsPage() {
       if (!dateRange.startDate && !dateRange.endDate) return true
       
       // Filter by date range
-      const start = new Date(dateRange.startDate)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(dateRange.endDate)
-      end.setHours(23, 59, 59, 999)
-      
-      if (leadDate < start) return false
-      if (leadDate > end) return false
+      if (dateRange.startDate) {
+        const start = new Date(dateRange.startDate)
+        start.setHours(0, 0, 0, 0)
+        if (leadDate < start) return false
+      }
+      if (dateRange.endDate) {
+        const end = new Date(dateRange.endDate)
+        end.setHours(23, 59, 59, 999)
+        if (leadDate > end) return false
+      }
       
       return true
     })
@@ -348,13 +351,16 @@ export default function CRMAnalyticsPage() {
       
       if (!dateRange.startDate && !dateRange.endDate) return true
       
-      const start = new Date(dateRange.startDate)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(dateRange.endDate)
-      end.setHours(23, 59, 59, 999)
-      
-      if (leadDate < start) return false
-      if (leadDate > end) return false
+      if (dateRange.startDate) {
+        const start = new Date(dateRange.startDate)
+        start.setHours(0, 0, 0, 0)
+        if (leadDate < start) return false
+      }
+      if (dateRange.endDate) {
+        const end = new Date(dateRange.endDate)
+        end.setHours(23, 59, 59, 999)
+        if (leadDate > end) return false
+      }
       
       return true
     })
