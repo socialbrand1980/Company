@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { google } from 'googleapis'
 
-// Google Apps Script Webhook URL (for write operations)
-const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwCxbm5mXSBFKiPg8yAOpERNBQMsnaHvDPHX9BoTheB4S7LpxLa0qJypJ7TxwCnmQNT/exec'
-
-// Google Sheets API credentials (for read operations)
+// Google Sheet ID from your Work With Us form
 const SPREADSHEET_ID = '1QUWb2DLCjosHoaoYNiyZbh_YqrKA0QcjE31HRTcCCvk'
+
+// Google Apps Script Webhook URL for updates
+const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwCxbm5mXSBFKiPg8yAOpERNBQMsnaHvDPHX9BoTheB4S7LpxLa0qJypJ7TxwCnmQNT/exec'
 
 export async function GET(request: NextRequest) {
   try {
     // Check if running in development/local
     const host = request.headers.get('host') || ''
     const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
-    
+
     if (!isLocal && process.env.NODE_ENV === 'production') {
       return NextResponse.json(
         { error: 'CRM is only accessible locally' },
@@ -20,51 +19,57 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Initialize Google Sheets API
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    // Fetch data from Google Sheets via published CSV endpoint
+    // This works without API credentials for public sheets
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`
+
+    const response = await fetch(csvUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     })
 
-    const sheets = google.sheets({ version: 'v4', auth })
+    if (!response.ok) {
+      throw new Error('Failed to fetch from Google Sheets')
+    }
 
-    // Fetch all leads from Google Sheets
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'Sheet1!A:U',
-    })
-
-    const rows = response.data.values || []
-    const headers = rows[0] || []
+    const text = await response.text()
     
-    // Convert to array of objects (skip header row)
-    const leads = rows.slice(1).map(row => {
+    // Parse the JSON response (Google wraps it in a function call)
+    const jsonText = text.substring(47).slice(0, -2)
+    const json = JSON.parse(jsonText)
+
+    // Convert to array of objects
+    const cols = json.table.cols.map((col: any) => col.label || '')
+    const rows = json.table.rows || []
+
+    const leads = rows.map((row: any) => {
       const lead: any = {}
-      headers.forEach((header: string, index: number) => {
-        lead[header.toLowerCase().replace(/\s+/g, '')] = row[index] || ''
+      cols.forEach((col: string, index: number) => {
+        const cell = row.c[index]
+        const key = col.toLowerCase().replace(/\s+/g, '')
+        lead[key] = cell?.v || cell?.f || ''
       })
       return lead
     })
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       leads,
       count: leads.length
     })
 
   } catch (error) {
-    console.error('Google Sheets API Error:', error)
-    
-    // Return mock data for development if API fails
+    console.error('Google Sheets Fetch Error:', error)
+
+    // Return error with more details in development
     if (process.env.NODE_ENV === 'development') {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: false,
         leads: [],
         count: 0,
-        message: 'Google Sheets API not configured'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Make sure the Google Sheet is shared publicly or configure Google Sheets API credentials'
       })
     }
 
@@ -80,7 +85,7 @@ export async function PATCH(request: NextRequest) {
     // Check if running in development/local
     const host = request.headers.get('host') || ''
     const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
-    
+
     if (!isLocal && process.env.NODE_ENV === 'production') {
       return NextResponse.json(
         { error: 'CRM is only accessible locally' },
@@ -98,73 +103,26 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Initialize Google Sheets API
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    // Send update to Google Apps Script Webhook
+    const webhookResponse = await fetch(APPS_SCRIPT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      body: JSON.stringify({
+        action: 'update',
+        email,
+        updates,
+      }),
     })
 
-    const sheets = google.sheets({ version: 'v4', auth })
-
-    // Find the row with matching email
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'Sheet1!A:U',
-    })
-
-    const rows = response.data.values || []
-    const headers = rows[0] || []
-    
-    // Find row index by email (column R = index 17)
-    const emailIndex = headers.findIndex((h: string) => h.toLowerCase().includes('email'))
-    const rowIndex = rows.findIndex((row: string[]) => row[emailIndex] === email)
-
-    if (rowIndex === -1 || rowIndex === 0) {
-      return NextResponse.json(
-        { error: 'Lead not found' },
-        { status: 404 }
-      )
+    if (!webhookResponse.ok) {
+      throw new Error('Failed to update Google Sheet')
     }
 
-    // Update specific columns
-    const updatesToApply: any = {}
-    if (updates.leadStatus !== undefined) {
-      const statusIndex = headers.findIndex((h: string) => h.toLowerCase().includes('leadstatus'))
-      if (statusIndex !== -1) {
-        const cellRange = `Sheet1!${String.fromCharCode(65 + statusIndex)}${rowIndex + 1}`
-        updatesToApply[statusIndex] = { range: cellRange, values: [[updates.leadStatus]] }
-      }
-    }
-    
-    if (updates.notes !== undefined) {
-      const notesIndex = headers.findIndex((h: string) => h.toLowerCase().includes('notes'))
-      if (notesIndex !== -1) {
-        const cellRange = `Sheet1!${String.fromCharCode(65 + notesIndex)}${rowIndex + 1}`
-        updatesToApply[notesIndex] = { range: cellRange, values: [[updates.notes]] }
-      }
-    }
-
-    // Apply updates
-    if (Object.keys(updatesToApply).length > 0) {
-      for (const key in updatesToApply) {
-        const update = updatesToApply[key]
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: update.range,
-          valueInputOption: 'USER_ENTERED',
-          requestBody: {
-            values: update.values,
-          },
-        })
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Lead updated successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Lead updated successfully'
     })
 
   } catch (error) {

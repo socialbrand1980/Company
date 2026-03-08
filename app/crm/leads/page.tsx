@@ -74,6 +74,7 @@ export default function CRMLeadsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [showStatusDropdown, setShowStatusDropdown] = useState<string | null>(null)
+  const [updatingEmail, setUpdatingEmail] = useState<string | null>(null)
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -125,6 +126,32 @@ export default function CRMLeadsPage() {
         return bVal.localeCompare(aVal)
       }
     })
+
+  const updateLeadStatus = async (email: string, newStatus: string) => {
+    setUpdatingEmail(email)
+    try {
+      const response = await fetch('/api/crm/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          updates: { leadStatus: newStatus }
+        }),
+      })
+      
+      if (response.ok) {
+        await fetchLeads()
+      } else {
+        alert('Failed to update status')
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      alert('Failed to update status')
+    } finally {
+      setUpdatingEmail(null)
+      setShowStatusDropdown(null)
+    }
+  }
 
   const exportToCSV = () => {
     const headers = ["Timestamp", "Brand", "Email", "Phone", "Industry", "Budget", "Status", "Services"]
@@ -283,10 +310,17 @@ export default function CRMLeadsPage() {
                     <div className="relative">
                       <button
                         onClick={() => setShowStatusDropdown(showStatusDropdown === lead.email ? null : lead.email)}
-                        className={`text-xs px-3 py-1.5 rounded-full border ${statusColors[lead.leadstatus] || statusColors["New"]} flex items-center gap-2 hover:opacity-80 transition-opacity`}
+                        disabled={updatingEmail === lead.email}
+                        className={`text-xs px-3 py-1.5 rounded-full border ${statusColors[lead.leadstatus] || statusColors["New"]} flex items-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-50`}
                       >
-                        {lead.leadstatus || "New"}
-                        <ChevronDown className="h-3 w-3" />
+                        {updatingEmail === lead.email ? (
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <>
+                            {lead.leadstatus || "New"}
+                            <ChevronDown className="h-3 w-3" />
+                          </>
+                        )}
                       </button>
                       
                       {showStatusDropdown === lead.email && (
@@ -296,11 +330,9 @@ export default function CRMLeadsPage() {
                             {statusOptions.map(status => (
                               <button
                                 key={status}
-                                onClick={() => {
-                                  // Update status logic here
-                                  setShowStatusDropdown(null)
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/[0.05] transition-colors ${
+                                onClick={() => updateLeadStatus(lead.email, status)}
+                                disabled={updatingEmail === lead.email}
+                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/[0.05] transition-colors disabled:opacity-50 ${
                                   lead.leadstatus === status ? 'text-blue-400 bg-blue-500/10' : 'text-foreground'
                                 }`}
                               >
