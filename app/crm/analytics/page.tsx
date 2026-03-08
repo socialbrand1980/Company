@@ -272,7 +272,6 @@ export default function CRMAnalyticsPage() {
               </div>
             </div>
           </div>
-          </div>
         </div>
       </div>
     </div>
