@@ -66,6 +66,8 @@ export default function CRMAnalyticsPage() {
   useEffect(() => {
     console.log('=== Analytics Filter ===')
     console.log('Date range:', dateRange)
+    console.log('Start:', dateRange.startDate ? dateRange.startDate.toISOString() : 'null')
+    console.log('End:', dateRange.endDate ? dateRange.endDate.toISOString() : 'null')
     console.log('Total leads:', leads.length)
     console.log('Closed Won leads:', leads.filter(l => l.leadstatus === 'Closed Won').length)
     
@@ -78,10 +80,11 @@ export default function CRMAnalyticsPage() {
     const startTimestamp = dateRange.startDate ? new Date(dateRange.startDate).setHours(0, 0, 0, 0) : null
     const endTimestamp = dateRange.endDate ? new Date(dateRange.endDate).setHours(23, 59, 59, 999) : null
 
-    console.log('Start timestamp:', startTimestamp, new Date(startTimestamp || 0))
-    console.log('End timestamp:', endTimestamp, new Date(endTimestamp || 0))
+    console.log('Start timestamp:', startTimestamp, new Date(startTimestamp || 0).toISOString())
+    console.log('End timestamp:', endTimestamp, new Date(endTimestamp || 0).toISOString())
 
     let filteredCount = 0
+    let skippedCount = 0
     
     leads.forEach((lead: Lead) => {
       if (lead.leadstatus !== 'Closed Won') {
@@ -92,19 +95,21 @@ export default function CRMAnalyticsPage() {
       const leadDate = new Date(lead.timestamp)
       const leadTimestamp = new Date(leadDate.getFullYear(), leadDate.getMonth(), leadDate.getDate()).getTime()
       
-      console.log('Lead:', lead.brandname, 'Status:', lead.leadstatus, 'Lead timestamp:', leadTimestamp, new Date(leadTimestamp))
+      console.log('Lead:', lead.brandname, 'Raw timestamp:', lead.timestamp, 'Parsed:', leadDate.toISOString(), 'Midnight:', new Date(leadTimestamp).toISOString())
 
       // Filter by date range using timestamps
       if (startTimestamp !== null && leadTimestamp < startTimestamp) {
-        console.log('  → Skipped: Before start date')
+        console.log('  ❌ Skipped: Before start date')
+        skippedCount++
         return
       }
       if (endTimestamp !== null && leadTimestamp > endTimestamp) {
-        console.log('  → Skipped: After end date')
+        console.log('  ❌ Skipped: After end date')
+        skippedCount++
         return
       }
       
-      console.log('  → Included in range')
+      console.log('  ✅ Included in range')
       filteredCount++
       
       const year = leadDate.getFullYear()
@@ -154,7 +159,8 @@ export default function CRMAnalyticsPage() {
       data[key].clients.push(lead.brandname || 'Unknown')
     })
 
-    console.log('Filtered leads count:', filteredCount)
+    console.log('✅ Filtered leads count:', filteredCount)
+    console.log('❌ Skipped leads count:', skippedCount)
     console.log('Grouped data:', data)
 
     const sortedData = Object.values(data).sort((a, b) => {
