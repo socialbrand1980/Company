@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, Calendar } from "lucide-react"
+import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, Calendar, Funnel, PieChart, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
 
@@ -11,6 +11,14 @@ interface Lead {
   timestamp: string
   brandname: string
   industry: string
+  email: string
+}
+
+interface FunnelData {
+  stage: string
+  count: number
+  percentage: number
+  color: string
 }
 
 interface MonthlyData {
@@ -24,10 +32,8 @@ interface MonthlyData {
 export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
-  const [timeRange, setTimeRange] = useState<"6m" | "12m" | "24m" | "all">("12m")
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [timeRange, setTimeRange] = useState<"6m" | "12m" | "all">("12m")
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
 
   useEffect(() => {
     async function fetchLeads() {
@@ -48,18 +54,13 @@ export default function CRMAnalyticsPage() {
 
   // Process monthly revenue data
   useEffect(() => {
-    console.log('Processing leads:', leads.length)
     if (leads.length === 0) return
 
     const months: { [key: string]: MonthlyData } = {}
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     leads.forEach((lead: Lead) => {
-      console.log('Lead status:', lead.leadstatus, 'brand:', lead.brandname)
-      if (lead.leadstatus !== 'Closed Won') {
-        console.log('Skipping lead - not Closed Won')
-        return
-      }
+      if (lead.leadstatus !== 'Closed Won') return
       
       const date = new Date(lead.timestamp || Date.now())
       const year = date.getFullYear()
@@ -69,8 +70,6 @@ export default function CRMAnalyticsPage() {
       const budgetValue = typeof lead.budget === 'string' 
         ? parseInt(lead.budget.replace(/[^0-9]/g, '')) || 0
         : (lead.budget as number) || 0
-
-      console.log('Processing Closed Won lead:', monthKey, budgetValue)
 
       if (!months[monthKey]) {
         months[monthKey] = {
@@ -87,32 +86,31 @@ export default function CRMAnalyticsPage() {
       months[monthKey].clients.push(lead.brandname || 'Unknown')
     })
 
-    console.log('Months object:', months)
-
     const sortedData = Object.values(months).sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year
       return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
-    console.log('Sorted data:', sortedData)
-
-    // Filter based on timeRange
     let filteredData = sortedData
     if (timeRange === "6m") {
       filteredData = sortedData.slice(-6)
     } else if (timeRange === "12m") {
       filteredData = sortedData.slice(-12)
-    } else if (timeRange === "24m") {
-      filteredData = sortedData.slice(-24)
     }
 
-    console.log('Final monthly data:', filteredData)
     setMonthlyData(filteredData)
   }, [leads, timeRange])
 
+  // Calculate stats
   const stats = {
     totalLeads: leads.length,
-    activeClients: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
+    newLeads: leads.filter((l: Lead) => l.leadstatus === 'New').length,
+    contacted: leads.filter((l: Lead) => l.leadstatus === 'Contacted').length,
+    discovery: leads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length,
+    proposal: leads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length,
+    negotiation: leads.filter((l: Lead) => l.leadstatus === 'Negotiation').length,
+    closedWon: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
+    closedLost: leads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length,
     totalRevenue: leads
       .filter((l: Lead) => l.leadstatus === 'Closed Won')
       .reduce((acc: number, l: Lead) => {
@@ -121,7 +119,9 @@ export default function CRMAnalyticsPage() {
           : (l.budget as number) || 0
         return acc + budgetValue
       }, 0),
-    conversionRate: leads.length > 0 ? ((leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / leads.length) * 100).toFixed(1) : "0",
+    conversionRate: leads.length > 0 
+      ? ((leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / leads.length) * 100).toFixed(1) 
+      : "0",
     avgDealSize: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length > 0 
       ? leads
           .filter((l: Lead) => l.leadstatus === 'Closed Won')
@@ -134,25 +134,27 @@ export default function CRMAnalyticsPage() {
       : 0
   }
 
-  const leadsByStatus = [
-    { status: "New", count: leads.filter((l: Lead) => l.leadstatus === 'New').length, color: "bg-blue-500" },
-    { status: "Contacted", count: leads.filter((l: Lead) => l.leadstatus === 'Contacted').length, color: "bg-yellow-500" },
-    { status: "Discovery Call", count: leads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length, color: "bg-purple-500" },
-    { status: "Proposal Sent", count: leads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length, color: "bg-orange-500" },
-    { status: "Negotiation", count: leads.filter((l: Lead) => l.leadstatus === 'Negotiation').length, color: "bg-pink-500" },
-    { status: "Closed Won", count: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length, color: "bg-green-500" },
-    { status: "Closed Lost", count: leads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length, color: "bg-red-500" }
+  // Funnel data
+  const funnelData: FunnelData[] = [
+    { stage: "New Leads", count: stats.newLeads, percentage: 100, color: "bg-blue-500" },
+    { stage: "Contacted", count: stats.contacted, percentage: stats.totalLeads > 0 ? (stats.contacted / stats.totalLeads) * 100 : 0, color: "bg-yellow-500" },
+    { stage: "Discovery Call", count: stats.discovery, percentage: stats.totalLeads > 0 ? (stats.discovery / stats.totalLeads) * 100 : 0, color: "bg-purple-500" },
+    { stage: "Proposal", count: stats.proposal, percentage: stats.totalLeads > 0 ? (stats.proposal / stats.totalLeads) * 100 : 0, color: "bg-orange-500" },
+    { stage: "Negotiation", count: stats.negotiation, percentage: stats.totalLeads > 0 ? (stats.negotiation / stats.totalLeads) * 100 : 0, color: "bg-pink-500" },
+    { stage: "Closed Won", count: stats.closedWon, percentage: stats.totalLeads > 0 ? (stats.closedWon / stats.totalLeads) * 100 : 0, color: "bg-green-500" }
   ]
 
+  // Industry breakdown
+  const industryBreakdown = leads.reduce((acc: any, lead: Lead) => {
+    const industry = lead.industry || 'Other'
+    if (!acc[industry]) acc[industry] = 0
+    acc[industry]++
+    return acc
+  }, {})
+
   const exportData = () => {
-    const headers = ['Month', 'Year', 'Revenue', 'Deals Closed', 'Clients']
-    const rows = monthlyData.map(data => [
-      data.month,
-      data.year,
-      data.value,
-      data.count,
-      data.clients.join('; ')
-    ])
+    const headers = ['Stage', 'Count', 'Percentage']
+    const rows = funnelData.map(data => [data.stage, data.count, `${data.percentage.toFixed(1)}%`])
     
     const csv = [
       headers.join(','),
@@ -163,7 +165,7 @@ export default function CRMAnalyticsPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `revenue-report-${selectedYear}.csv`
+    a.download = `crm-analytics-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
   }
 
@@ -171,70 +173,102 @@ export default function CRMAnalyticsPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="text-center">
-          <BarChart3 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
+          <Activity className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-muted-foreground">Loading analytics...</p>
         </div>
       </div>
     )
   }
 
-  const years = [...new Set(leads
-    .map((l: Lead) => {
-      const date = new Date(l.timestamp || Date.now())
-      return date.getFullYear()
-    })
-    .filter(year => !isNaN(year)))]
-    .sort((a, b) => b - a)
-
-  const defaultYear = years.length > 0 ? years[0] : new Date().getFullYear()
-
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-white">Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-1">Track your CRM performance and metrics</p>
+            <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Complete insights from leads to closed deals</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
         </div>
 
-        {/* Stats Grid */}
+        {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={Users} label="Total Leads" value={stats.totalLeads.toString()} growth={12.5} />
-          <StatCard icon={Target} label="Active Clients" value={stats.activeClients.toString()} growth={8.3} />
-          <StatCard icon={DollarSign} label="Total Revenue" value={formatIDR(stats.totalRevenue)} growth={23.7} />
-          <StatCard icon={TrendingUp} label="Conversion Rate" value={`${stats.conversionRate}%`} growth={5.2} />
+          <MetricCard 
+            icon={Users} 
+            label="Total Leads" 
+            value={stats.totalLeads.toString()} 
+            subValue={`${stats.newLeads} new`}
+          />
+          <MetricCard 
+            icon={Target} 
+            label="Active Deals" 
+            value={(stats.contacted + stats.discovery + stats.proposal + stats.negotiation).toString()} 
+            subValue={`${stats.discovery} discovery`}
+          />
+          <MetricCard 
+            icon={DollarSign} 
+            label="Total Revenue" 
+            value={formatIDR(stats.totalRevenue)} 
+            subValue={`${stats.closedWon} deals`}
+          />
+          <MetricCard 
+            icon={TrendingUp} 
+            label="Conversion Rate" 
+            value={`${stats.conversionRate}%`} 
+            subValue={`Avg: ${formatIDR(stats.avgDealSize)}`}
+          />
         </div>
 
-        {/* Revenue Trend Chart */}
+        {/* Sales Funnel */}
         <div className="glass-card p-6 rounded-xl mb-8">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Funnel className="h-6 w-6 text-blue-400" />
+              <div>
+                <h3 className="text-lg font-semibold text-white">Sales Funnel</h3>
+                <p className="text-sm text-muted-foreground mt-1">Lead progression through pipeline</p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {funnelData.map((item, index) => (
+              <div key={item.stage}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                    <span className="text-sm text-white">{item.stage}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-medium text-white">{item.count} leads</span>
+                    <span className="text-xs text-muted-foreground ml-2">({item.percentage.toFixed(1)}%)</span>
+                  </div>
+                </div>
+                <div className="h-3 rounded-full bg-white/[0.05] overflow-hidden">
+                  <div
+                    className={`h-full ${item.color} transition-all duration-500`}
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Revenue Trend */}
+        <div className="glass-card p-6 rounded-xl mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-6 w-6 text-green-400" />
               <div>
                 <h3 className="text-lg font-semibold text-white">Revenue Trend</h3>
                 <p className="text-sm text-muted-foreground mt-1">Monthly revenue from closed deals</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                <select
-                  value={selectedYear || defaultYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                >
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
             </div>
             <div className="flex items-center gap-2">
-              {(["6m", "12m", "24m", "all"] as const).map((range) => (
+              {(["6m", "12m", "all"] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
@@ -244,140 +278,129 @@ export default function CRMAnalyticsPage() {
                       : "bg-white/[0.03] text-muted-foreground hover:text-white"
                   }`}
                 >
-                  {range === "6m" ? "6M" : range === "12m" ? "12M" : range === "24m" ? "24M" : "All"}
+                  {range === "6m" ? "6M" : range === "12m" ? "12M" : "All"}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-2 h-64">
-            {monthlyData
-              .filter(data => !selectedYear || data.year === selectedYear)
-              .map((data, index) => {
-                const filteredByYear = monthlyData.filter(d => !selectedYear || d.year === selectedYear)
-                const maxValue = Math.max(...filteredByYear.map(d => d.value), 1)
+          <div className="flex items-end justify-between gap-2 h-48">
+            {monthlyData.length > 0 ? (
+              monthlyData.map((data) => {
+                const maxValue = Math.max(...monthlyData.map(d => d.value), 1)
                 const height = (data.value / maxValue) * 100
                 
                 return (
-                  <div
-                    key={`${data.month}-${data.year}`}
-                    className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
-                    onClick={() => setSelectedMonth(selectedMonth === index ? null : index)}
-                  >
+                  <div key={`${data.month}-${data.year}`} className="flex-1 flex flex-col items-center gap-2 group">
                     <div className="relative w-full">
                       <div
                         className="w-full bg-gradient-to-t from-green-500/30 to-green-500 rounded-t-lg transition-all duration-500 hover:from-green-400/40 hover:to-green-400"
                         style={{ height: `${Math.max(height, 2)}%`, minHeight: '8px' }}
                       />
-                      {/* Tooltip */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                         <div className="glass-card rounded-lg p-3 min-w-[180px] shadow-xl">
                           <p className="text-xs font-medium text-white mb-1">{data.month} {data.year}</p>
                           <p className="text-sm font-bold text-green-400 mb-2">{formatIDR(data.value)}</p>
-                          <div className="text-xs text-muted-foreground">
-                            <p>{data.count} deal{data.count !== 1 ? 's' : ''}</p>
-                            <p className="truncate mt-1">{data.clients.slice(0, 2).join(', ')}{data.clients.length > 2 ? ` +${data.clients.length - 2}` : ''}</p>
-                          </div>
+                          <p className="text-xs text-muted-foreground">{data.count} deal{data.count !== 1 ? 's' : ''}</p>
                         </div>
                       </div>
                     </div>
                     <span className="text-xs text-muted-foreground">{data.month}</span>
                   </div>
                 )
-              })}
+              })
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-muted-foreground">No closed deals yet</p>
+              </div>
+            )}
           </div>
-
-          {/* Selected Month Detail */}
-          {selectedMonth !== null && monthlyData.filter(d => d.year === selectedYear)[selectedMonth] && (
-            <div className="mt-6 p-4 rounded-lg bg-white/[0.02] border border-white/[0.08]">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-semibold text-white">
-                  {monthlyData.filter(d => d.year === selectedYear)[selectedMonth].month} {selectedYear} Details
-                </h4>
-                <button onClick={() => setSelectedMonth(null)} className="text-muted-foreground hover:text-white">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Total Revenue</p>
-                  <p className="text-lg font-bold text-green-400">
-                    {formatIDR(monthlyData.filter(d => d.year === selectedYear)[selectedMonth].value)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Deals Closed</p>
-                  <p className="text-lg font-bold text-white">{monthlyData.filter(d => d.year === selectedYear)[selectedMonth].count}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Avg Deal Size</p>
-                  <p className="text-lg font-bold text-white">
-                    {formatIDR(monthlyData.filter(d => d.year === selectedYear)[selectedMonth].value / 
-                              Math.max(monthlyData.filter(d => d.year === selectedYear)[selectedMonth].count, 1))}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Clients</p>
-                <div className="flex flex-wrap gap-2">
-                  {monthlyData.filter(d => d.year === selectedYear)[selectedMonth].clients.map((client, i) => (
-                    <span key={i} className="text-xs px-2 py-1 rounded bg-white/[0.05] text-white">
-                      {client}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Leads by Status */}
-        <div className="glass-card p-6 rounded-xl mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white">Leads by Status</h3>
-              <p className="text-sm text-muted-foreground mt-1">Distribution of leads across pipeline</p>
-            </div>
-            <BarChart3 className="h-8 w-8 text-blue-400" />
-          </div>
-          <div className="space-y-4">
-            {leadsByStatus.map((item) => (
-              <div key={item.status}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-white">{item.status}</span>
-                  <span className="text-sm text-muted-foreground">{item.count} leads</span>
-                </div>
-                <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
-                  <div
-                    className={`h-full ${item.color} transition-all duration-500`}
-                    style={{ width: `${(item.count / Math.max(...leadsByStatus.map(l => l.count))) * 100}%` }}
-                  />
-                </div>
+        {/* Status Distribution & Industry */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Status Distribution */}
+          <div className="glass-card p-6 rounded-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <PieChart className="h-6 w-6 text-purple-400" />
+              <div>
+                <h3 className="text-lg font-semibold text-white">Lead Status Distribution</h3>
+                <p className="text-sm text-muted-foreground mt-1">Current pipeline breakdown</p>
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <StatusItem label="New" count={stats.newLeads} color="text-blue-400" />
+              <StatusItem label="Contacted" count={stats.contacted} color="text-yellow-400" />
+              <StatusItem label="Discovery" count={stats.discovery} color="text-purple-400" />
+              <StatusItem label="Proposal" count={stats.proposal} color="text-orange-400" />
+              <StatusItem label="Negotiation" count={stats.negotiation} color="text-pink-400" />
+              <StatusItem label="Won" count={stats.closedWon} color="text-green-400" />
+              <StatusItem label="Lost" count={stats.closedLost} color="text-red-400" />
+            </div>
+          </div>
+
+          {/* Industry Breakdown */}
+          <div className="glass-card p-6 rounded-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <Target className="h-6 w-6 text-cyan-400" />
+              <div>
+                <h3 className="text-lg font-semibold text-white">Industry Breakdown</h3>
+                <p className="text-sm text-muted-foreground mt-1">Leads by industry</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(industryBreakdown)
+                .sort(([,a]: any[,b]: any) => b - a)
+                .slice(0, 5)
+                .map(([industry, count]: [string, any], index) => (
+                  <div key={industry}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-white">{industry}</span>
+                      <span className="text-sm text-muted-foreground">{count} leads</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                        style={{ width: `${(count as number / stats.totalLeads) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
 
         {/* Performance Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="glass-card p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-white mb-4">Avg. Deal Size</h3>
-            <div className="text-3xl font-bold text-white mb-2">{formatIDR(stats.avgDealSize)}</div>
-            <div className="flex items-center gap-2 text-sm text-green-400">
-              <ArrowUpRight className="h-4 w-4" />
-              <span>+15.3% from last period</span>
-            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Avg. Deal Size</h3>
+            <div className="text-2xl font-bold text-white mb-2">{formatIDR(stats.avgDealSize)}</div>
+            <p className="text-xs text-muted-foreground">Average revenue per closed deal</p>
           </div>
 
           <div className="glass-card p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-white mb-4">Sales Cycle</h3>
-            <div className="text-3xl font-bold text-white mb-2">14 days</div>
-            <div className="flex items-center gap-2 text-sm text-green-400">
-              <ArrowDownRight className="h-4 w-4" />
-              <span>-3 days from last period</span>
+            <h3 className="text-lg font-semibold text-white mb-2">Win Rate</h3>
+            <div className="text-2xl font-bold text-green-400 mb-2">
+              {stats.totalLeads > 0 ? ((stats.closedWon / stats.totalLeads) * 100).toFixed(1) : 0}%
             </div>
+            <p className="text-xs text-muted-foreground">Percentage of leads that close won</p>
+          </div>
+
+          <div className="glass-card p-6 rounded-xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Total Pipeline Value</h3>
+            <div className="text-2xl font-bold text-white mb-2">
+              {formatIDR(
+                leads
+                  .filter((l: Lead) => ['New', 'Contacted', 'Discovery Call', 'Proposal Sent', 'Negotiation'].includes(l.leadstatus))
+                  .reduce((acc: number, l: Lead) => {
+                    const budgetValue = typeof l.budget === 'string' 
+                      ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+                      : (l.budget as number) || 0
+                    return acc + budgetValue
+                  }, 0)
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Potential revenue from active deals</p>
           </div>
         </div>
       </div>
@@ -385,22 +408,25 @@ export default function CRMAnalyticsPage() {
   )
 }
 
-function StatCard({ icon: Icon, label, value, growth }: any) {
-  const isPositive = growth > 0
-  
+function MetricCard({ icon: Icon, label, value, subValue }: any) {
   return (
     <div className="glass-card p-4 rounded-xl">
       <div className="flex items-center justify-between mb-3">
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] flex items-center justify-center">
           <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
-        <div className={`flex items-center gap-1 text-xs ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-          {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-          <span>{Math.abs(growth)}%</span>
-        </div>
       </div>
       <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-xs text-muted-foreground mt-1">{label}</p>
+      <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
+    </div>
+  )
+}
+
+function StatusItem({ label, count, color }: any) {
+  return (
+    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+      <p className={`text-lg font-bold ${color}`}>{count}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }
