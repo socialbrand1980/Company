@@ -71,12 +71,12 @@ export default function CRMAnalyticsPage() {
       if (lead.leadstatus !== 'Closed Won') return
       
       const leadDate = new Date(lead.timestamp || Date.now())
+      leadDate.setHours(0, 0, 0, 0)
       
-      // Filter by date range (compare dates only, ignore time)
+      // Filter by date range (only if dates are set)
       if (startDate) {
         const start = new Date(startDate)
         start.setHours(0, 0, 0, 0)
-        leadDate.setHours(0, 0, 0, 0)
         if (leadDate < start) return
       }
       if (endDate) {
@@ -90,8 +90,11 @@ export default function CRMAnalyticsPage() {
       const day = leadDate.getDate()
       
       // Group by day if range is small, otherwise by month
-      const rangeDays = startDate && endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : 30
-      const groupByDay = rangeDays <= 31
+      let groupByDay = false
+      if (startDate && endDate) {
+        const rangeDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+        groupByDay = rangeDays <= 31
+      }
       
       let key: string
       let label: string

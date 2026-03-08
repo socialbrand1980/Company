@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { Calendar, ChevronDown, Check } from "lucide-react"
+import { Calendar as CalendarIcon, ChevronDown, Check, X } from "lucide-react"
 
 interface DateRange {
   startDate: Date | null
@@ -14,6 +14,7 @@ interface DateFilterProps {
 }
 
 type PresetOption = 
+  | "all"
   | "today"
   | "yesterday"
   | "last7"
@@ -25,7 +26,7 @@ type PresetOption =
 
 export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedPreset, setSelectedPreset] = useState<PresetOption>("last7")
+  const [selectedPreset, setSelectedPreset] = useState<PresetOption>("all")
   const [customRange, setCustomRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
   const [showCalendar, setShowCalendar] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -43,11 +44,14 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   }, [])
 
   // Get date range for preset
-  const getDateRange = (preset: PresetOption): { start: Date; end: Date; label: string } => {
+  const getDateRange = (preset: PresetOption): { start: Date | null; end: Date | null; label: string } => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     switch (preset) {
+      case "all":
+        return { start: null, end: null, label: "All time" }
+      
       case "today":
         return { start: today, end: today, label: "Today" }
       
@@ -88,13 +92,13 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
       
       case "custom":
         return { 
-          start: customRange.start ? new Date(customRange.start) : today, 
-          end: customRange.end ? new Date(customRange.end) : today, 
+          start: customRange.start ? new Date(customRange.start) : null, 
+          end: customRange.end ? new Date(customRange.end) : null, 
           label: "Custom range" 
         }
       
       default:
-        return { start: today, end: today, label: "Today" }
+        return { start: null, end: null, label: "All time" }
     }
   }
 
@@ -119,11 +123,13 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   // Handle custom date range apply
   const handleApplyCustomRange = () => {
     if (customRange.start && customRange.end) {
-      const range = getDateRange("custom")
+      const startDate = new Date(customRange.start)
+      const endDate = new Date(customRange.end)
+      
       onDateRangeChange?.({
-        startDate: range.start,
-        endDate: range.end,
-        label: `${formatDate(range.start)} - ${formatDate(range.end)}`
+        startDate,
+        endDate,
+        label: `${formatDate(startDate)} - ${formatDate(endDate)}`
       })
       setIsOpen(false)
       setShowCalendar(false)
@@ -148,6 +154,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
   }
 
   const presets: { id: PresetOption; label: string }[] = [
+    { id: "all", label: "All time" },
     { id: "today", label: "Today" },
     { id: "yesterday", label: "Yesterday" },
     { id: "last7", label: "Last 7 days" },
@@ -165,18 +172,18 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors text-sm text-white"
       >
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         <span>{getCurrentLabel()}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 glass-card rounded-xl shadow-2xl border border-white/[0.08] z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 glass-card rounded-xl shadow-2xl border border-white/[0.08] z-50 overflow-hidden">
           {/* Preset Options */}
-          <div className="p-2">
+          <div className="p-2 max-h-[400px] overflow-y-auto">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 py-2">
-              Presets
+              Quick Filters
             </div>
             {presets.map((preset) => (
               <button
@@ -199,8 +206,16 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
           {/* Custom Date Range Picker */}
           {showCalendar && (
             <div className="border-t border-white/[0.08] p-4">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                Custom Range
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Select Date Range
+                </div>
+                <button
+                  onClick={() => setShowCalendar(false)}
+                  className="p-1 hover:bg-white/[0.05] rounded transition-colors"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
               
               <div className="space-y-3">
@@ -232,7 +247,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
                   disabled={!customRange.start || !customRange.end}
                   className="w-full px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/[0.05] disabled:text-muted-foreground text-white text-sm font-medium transition-colors"
                 >
-                  Apply
+                  Apply Range
                 </button>
               </div>
             </div>
