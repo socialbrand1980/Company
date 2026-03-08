@@ -91,8 +91,22 @@ export default function CRMAnalyticsPage() {
         return
       }
 
-      // Get lead date and convert to timestamp at midnight
-      const leadDate = new Date(lead.timestamp)
+      // Parse timestamp from Google Sheets format "Date(2026,2,8,13,3,42)"
+      let leadDate: Date
+      
+      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
+        // Extract: Date(year, month, day, hour, minute, second)
+        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+        if (match) {
+          const [, year, month, day, hour, minute, second] = match
+          // Note: Google Sheets month is 1-indexed (1=Jan), JS month is 0-indexed (0=Jan)
+          leadDate = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
+        } else {
+          leadDate = new Date(lead.timestamp)
+        }
+      } else {
+        leadDate = new Date(lead.timestamp)
+      }
       
       // Check if date is valid
       if (isNaN(leadDate.getTime())) {
