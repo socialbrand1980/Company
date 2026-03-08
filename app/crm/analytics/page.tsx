@@ -81,21 +81,22 @@ export default function CRMAnalyticsPage() {
     })
 
     const sortedData = Object.values(months).sort((a, b) => {
-      if (a.year !== b.year) return b.year - a.year
-      return monthNames.indexOf(b.month) - monthNames.indexOf(a.month)
+      if (a.year !== b.year) return a.year - b.year
+      return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
     // Filter based on timeRange
     let filteredData = sortedData
     if (timeRange === "6m") {
-      filteredData = sortedData.slice(0, 6)
+      filteredData = sortedData.slice(-6)
     } else if (timeRange === "12m") {
-      filteredData = sortedData.slice(0, 12)
+      filteredData = sortedData.slice(-12)
     } else if (timeRange === "24m") {
-      filteredData = sortedData.slice(0, 24)
+      filteredData = sortedData.slice(-24)
     }
 
-    setMonthlyData(filteredData.reverse())
+    console.log('Monthly data:', filteredData)
+    setMonthlyData(filteredData)
   }, [leads, timeRange])
 
   const stats = {
@@ -174,6 +175,13 @@ export default function CRMAnalyticsPage() {
     .filter(year => !isNaN(year)))]
     .sort((a, b) => b - a)
 
+  // Set default selected year to latest year with data
+  useEffect(() => {
+    if (years.length > 0 && !selectedYear) {
+      setSelectedYear(years[0])
+    }
+  }, [years])
+
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -238,10 +246,11 @@ export default function CRMAnalyticsPage() {
 
           <div className="flex items-end justify-between gap-2 h-64">
             {monthlyData
-              .filter(data => data.year === selectedYear)
+              .filter(data => !selectedYear || data.year === selectedYear)
               .map((data, index) => {
-                const maxValue = Math.max(...monthlyData.filter(d => d.year === selectedYear).map(d => d.value))
-                const height = maxValue > 0 ? (data.value / maxValue) * 100 : 0
+                const filteredByYear = monthlyData.filter(d => !selectedYear || d.year === selectedYear)
+                const maxValue = Math.max(...filteredByYear.map(d => d.value), 1)
+                const height = (data.value / maxValue) * 100
                 
                 return (
                   <div
@@ -266,7 +275,7 @@ export default function CRMAnalyticsPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground rotate-0">{data.month}</span>
+                    <span className="text-xs text-muted-foreground">{data.month}</span>
                   </div>
                 )
               })}
