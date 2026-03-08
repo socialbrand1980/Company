@@ -206,8 +206,13 @@ export default function CRMDashboard() {
     totalValue: leads
       .filter(l => l.leadstatus === "Closed Won")
       .reduce((acc, lead) => {
-        const budgetStr = String(lead.budget || '')
-        const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0
+        let budget: number
+        if (typeof lead.budget === 'number') {
+          budget = lead.budget
+        } else {
+          const budgetStr = String(lead.budget || '')
+          budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0
+        }
         return acc + budget
       }, 0),
   }

@@ -2,13 +2,16 @@
 export function formatIDR(amount: number | string): string {
   // Parse amount if it's a string (remove non-numeric chars except minus)
   let numericAmount: number
-  
+
   if (typeof amount === 'string') {
     // Remove all non-numeric characters except minus
     const cleaned = amount.replace(/[^0-9-]/g, '')
     numericAmount = parseInt(cleaned) || 0
-  } else {
+  } else if (typeof amount === 'number') {
     numericAmount = amount
+  } else {
+    // Fallback for null/undefined/other types
+    return 'N/A'
   }
 
   // Format with thousand separator (dot) and "Rp" prefix

@@ -300,8 +300,13 @@ export default function CRMPipelinePage() {
         {pipelineStages.map((stage) => {
           const stageLeads = getLeadsByStatus(stage.id)
           const totalValue = stageLeads.reduce((acc, lead) => {
-            const budgetStr = String(lead.budget || '')
-            const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 50000000
+            let budget: number
+            if (typeof lead.budget === 'number') {
+              budget = lead.budget
+            } else {
+              const budgetStr = String(lead.budget || '')
+              budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 50000000
+            }
             return acc + budget
           }, 0)
 
@@ -370,7 +375,9 @@ export default function CRMPipelinePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DollarSign className="h-3 w-3" />
-                        <span className="text-white font-medium">{lead.budget ? formatIDR(String(lead.budget)) : "N/A"}</span>
+                        <span className="text-white font-medium">
+                          {lead.budget ? formatIDR(lead.budget) : "N/A"}
+                        </span>
                       </div>
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
