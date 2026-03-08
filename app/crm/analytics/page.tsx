@@ -32,10 +32,9 @@ interface MonthlyData {
 export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
-  const [timeRange, setTimeRange] = useState<"6m" | "12m" | "all">("12m")
-  const [viewMode, setViewMode] = useState<"daily" | "monthly" | "yearly">("monthly")
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
+  const [selectedYear, setSelectedYear] = useState<number | "">("")
+  const [selectedMonth, setSelectedMonth] = useState<number | "">("")
+  const [selectedDay, setSelectedDay] = useState<number | "">("")
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export default function CRMAnalyticsPage() {
     fetchLeads()
   }, [])
 
-  // Process revenue data based on view mode
+  // Process revenue data based on selected filters
   useEffect(() => {
     if (leads.length === 0) return
 
@@ -70,17 +69,22 @@ export default function CRMAnalyticsPage() {
       const month = date.getMonth()
       const day = date.getDate()
       
-      // Filter by selected year and month based on view mode
-      if (viewMode === "yearly" && year !== selectedYear) return
-      if (viewMode === "monthly" && (year !== selectedYear || month !== selectedMonth)) return
+      // Filter by selected year, month, day
+      if (selectedYear !== "" && year !== selectedYear) return
+      if (selectedMonth !== "" && month !== selectedMonth) return
+      if (selectedDay !== "" && day !== selectedDay) return
       
+      // Group by selected granularity
       let key: string
       let label: string
       
-      if (viewMode === "daily") {
+      if (selectedDay !== "") {
         key = `${year}-${month}-${day}`
-        label = `${day} ${monthNames[month]}`
-      } else if (viewMode === "monthly") {
+        label = `${day}`
+      } else if (selectedMonth !== "") {
+        key = `${year}-${month}`
+        label = `${day}`
+      } else if (selectedYear !== "") {
         key = `${year}-${month}`
         label = monthNames[month]
       } else {
@@ -108,13 +112,13 @@ export default function CRMAnalyticsPage() {
     })
 
     const sortedData = Object.values(data).sort((a, b) => {
-      if (viewMode === "yearly") return a.year - b.year
-      if (viewMode === "monthly") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
-      return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      if (selectedDay !== "") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      if (selectedMonth !== "") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
     setMonthlyData(sortedData)
-  }, [leads, viewMode, selectedYear, selectedMonth])
+  }, [leads, selectedYear, selectedMonth, selectedDay])
 
   // Calculate stats
   const stats = {
@@ -204,63 +208,46 @@ export default function CRMAnalyticsPage() {
             <p className="text-sm text-muted-foreground mt-1">Complete insights from leads to closed deals</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* View Mode Filter */}
-            <div className="flex items-center gap-1 bg-white/[0.03] rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("daily")}
-                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  viewMode === "daily"
-                    ? "bg-blue-500 text-white"
-                    : "text-muted-foreground hover:text-white"
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                onClick={() => setViewMode("monthly")}
-                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  viewMode === "monthly"
-                    ? "bg-blue-500 text-white"
-                    : "text-muted-foreground hover:text-white"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setViewMode("yearly")}
-                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  viewMode === "yearly"
-                    ? "bg-blue-500 text-white"
-                    : "text-muted-foreground hover:text-white"
-                }`}
-              >
-                Yearly
-              </button>
-            </div>
-            
             {/* Year Filter */}
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              onChange={(e) => setSelectedYear(e.target.value === "" ? "" : Number(e.target.value))}
               className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
             >
-              {Array.from(new Set(leads.map((l: Lead) => new Date(l.timestamp || Date.now()).getFullYear()))).sort((a, b) => b - a).map(year => (
+              <option value="">All Years</option>
+              {Array.from(new Set(leads.map((l: Lead) => {
+                const date = new Date(l.timestamp || Date.now())
+                return date.getFullYear()
+              }).filter(year => !isNaN(year)))).sort((a, b) => b - a).map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
             
-            {/* Month Filter (only for daily view) */}
-            {viewMode === "daily" && (
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              >
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
-                  <option key={i} value={i}>{month}</option>
-                ))}
-              </select>
-            )}
+            {/* Month Filter */}
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value === "" ? "" : Number(e.target.value))}
+              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              disabled={selectedYear === ""}
+            >
+              <option value="">All Months</option>
+              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
+                <option key={i} value={i}>{month}</option>
+              ))}
+            </select>
+            
+            {/* Day Filter */}
+            <select
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value === "" ? "" : Number(e.target.value))}
+              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              disabled={selectedMonth === ""}
+            >
+              <option value="">All Days</option>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
             
             <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
               <Download className="h-4 w-4" />
@@ -340,11 +327,13 @@ export default function CRMAnalyticsPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {viewMode === "daily" 
-                    ? `Daily revenue for ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
-                    : viewMode === "monthly"
-                    ? `Monthly revenue for ${selectedYear}`
-                    : `Yearly revenue overview`
+                  {selectedDay !== "" 
+                    ? `Revenue for ${selectedDay} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
+                    : selectedMonth !== ""
+                    ? `Revenue for ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
+                    : selectedYear !== ""
+                    ? `Revenue for ${selectedYear}`
+                    : `All time revenue overview`
                   }
                 </p>
               </div>
