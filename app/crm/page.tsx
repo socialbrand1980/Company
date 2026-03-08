@@ -29,12 +29,12 @@ function formatTimestamp(timestamp: any): string {
     }
     // If it's a string that looks like "Date(2026,2,8,8,39,19)"
     else if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
-      // Extract: year, month, day, hour, minute, second
       const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
       if (match) {
         const [, year, month, day, hour, minute, second] = match
-        // Month is 0-indexed in JS, but Google Sheets uses 1-indexed
-        date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
+        // Google Sheets Date() uses 0-indexed month like JS (0=January, 11=December)
+        // So Date(2026,2,8,...) means March 8, 2026 (month 2 = March)
+        date = new Date(Date.UTC(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second)))
       } else {
         date = new Date(timestamp)
       }
@@ -402,7 +402,9 @@ export default function CRMDashboard() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="text-sm text-white font-medium">{lead.budget || "N/A"}</span>
+                    <span className="text-sm text-white font-medium">
+                      {lead.budget !== undefined && lead.budget !== null && lead.budget !== '' ? formatIDR(lead.budget) : "N/A"}
+                    </span>
                   </td>
                   <td className="p-4">
                     <span className={`text-xs px-3 py-1.5 rounded-full border ${statusColors[lead.leadstatus] || statusColors["New"]}`}>

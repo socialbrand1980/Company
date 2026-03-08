@@ -34,8 +34,10 @@ function formatTimestamp(timestamp: any): string {
       const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
       if (match) {
         const [, year, month, day, hour, minute, second] = match
-        // Month is 0-indexed in JS, but Google Sheets uses 1-indexed
-        date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
+        // Google Sheets Date() uses 0-indexed month like JS (0=January, 11=December)
+        // So Date(2026,2,8,...) means March 8, 2026 (month 2 = March)
+        // We use the month value directly in Date.UTC
+        date = new Date(Date.UTC(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second)))
       } else {
         date = new Date(timestamp)
       }
@@ -376,7 +378,7 @@ export default function CRMPipelinePage() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DollarSign className="h-3 w-3" />
                         <span className="text-white font-medium">
-                          {lead.budget ? formatIDR(lead.budget) : "N/A"}
+                          {lead.budget !== undefined && lead.budget !== null && lead.budget !== '' ? formatIDR(lead.budget) : "N/A"}
                         </span>
                       </div>
                       
