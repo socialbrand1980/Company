@@ -1,0 +1,39 @@
+// Format number to Indonesian Rupiah (IDR)
+export function formatIDR(amount: number | string): string {
+  // Parse amount if it's a string (remove non-numeric chars except minus)
+  let numericAmount: number
+  
+  if (typeof amount === 'string') {
+    // Remove all non-numeric characters except minus
+    const cleaned = amount.replace(/[^0-9-]/g, '')
+    numericAmount = parseInt(cleaned) || 0
+  } else {
+    numericAmount = amount
+  }
+
+  // Format with thousand separator (dot) and "Rp" prefix
+  return `Rp ${numericAmount.toLocaleString('id-ID')}`
+}
+
+// Parse budget string to number
+export function parseBudget(budget: string): number {
+  // Remove "Rp" and all non-numeric characters except minus
+  const cleaned = budget.replace(/[^0-9-]/g, '')
+  return parseInt(cleaned) || 0
+}
+
+// Format compact number (e.g., 1.5M, 2.3B)
+export function formatCompactIDR(amount: number | string): string {
+  const numericAmount = typeof amount === 'string' ? parseBudget(amount) : amount
+  
+  if (numericAmount >= 1000000000) {
+    return `Rp ${(numericAmount / 1000000000).toFixed(1)}M`
+  }
+  if (numericAmount >= 1000000) {
+    return `Rp ${(numericAmount / 1000000).toFixed(1)}M`
+  }
+  if (numericAmount >= 1000) {
+    return `Rp ${(numericAmount / 1000).toFixed(1)}K`
+  }
+  return `Rp ${numericAmount.toLocaleString('id-ID')}`
+}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { formatCompactIDR } from "@/lib/format-currency"
 
 interface Lead {
   timestamp: string
@@ -161,7 +162,7 @@ export default function CRMDashboard() {
         <StatCard
           icon={DollarSign}
           label="Revenue"
-          value={`Rp ${(stats.totalValue / 1000000).toFixed(1)}M`}
+          value={formatCompactIDR(stats.totalValue)}
           trendColor="green"
         />
       </div>
@@ -205,11 +206,13 @@ export default function CRMDashboard() {
           </div>
           <div className="flex items-end gap-3">
             <span className="text-4xl font-bold text-white">
-              Rp {((leads.filter(l => ["Contacted", "Discovery Call", "Proposal Sent", "Negotiation"].includes(l.leadstatus))
-                .reduce((acc, lead) => {
-                  const budget = lead.budget?.replace(/[^0-9]/g, '')
-                  return acc + (budget ? parseInt(budget) : 50000000)
-                }, 0) / 1000000)).toFixed(1)}M
+              {formatCompactIDR(
+                leads.filter(l => ["Contacted", "Discovery Call", "Proposal Sent", "Negotiation"].includes(l.leadstatus))
+                  .reduce((acc, lead) => {
+                    const budget = lead.budget?.replace(/[^0-9]/g, '')
+                    return acc + (budget ? parseInt(budget) : 50000000)
+                  }, 0)
+              )}
             </span>
             <span className="text-sm text-muted-foreground mb-1">estimated</span>
           </div>

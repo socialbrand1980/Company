@@ -15,6 +15,7 @@ import {
   X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatCompactIDR, formatIDR } from "@/lib/format-currency"
 
 interface Lead {
   timestamp: string
@@ -234,7 +235,7 @@ export default function CRMPipelinePage() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Rp {(totalValue / 1000000).toFixed(1)}M
+                  {formatCompactIDR(totalValue)}
                 </p>
               </div>
 
@@ -277,7 +278,7 @@ export default function CRMPipelinePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DollarSign className="h-3 w-3" />
-                        <span className="text-white font-medium">{lead.budget || "N/A"}</span>
+                        <span className="text-white font-medium">{lead.budget ? formatIDR(lead.budget) : "N/A"}</span>
                       </div>
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
