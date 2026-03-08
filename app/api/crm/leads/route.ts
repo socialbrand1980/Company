@@ -8,17 +8,9 @@ const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwXg7tW
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if running in development/local
-    const host = request.headers.get('host') || ''
-    const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
-
-    if (!isLocal && process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'CRM is only accessible locally' },
-        { status: 403 }
-      )
-    }
-
+    // Note: For production, consider adding authentication
+    // Currently accessible everywhere for demo purposes
+    
     // Method 1: Try Google Sheets API with credentials if available
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
