@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Google Apps Script Webhook URL
-const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwCxbm5mXSBFKiPg8yAOpERNBQMsnaHvDPHX9BoTheB4S7LpxLa0qJypJ7TxwCnmQNT/exec'
+const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyzUXdKN4dOBHhDoDqAhG41c84F88cpgNJue3Oy9-UVAgqHxxOJIL9L4sbTUc79K2hd/exec'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,34 +18,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Prepare data for Google Apps Script
+    // Prepare data for Google Apps Script - match exact column names
     const formData = {
-      timestamp: new Date().toISOString(),
-      brandName: body.brandName || '',
-      website: body.website || '',
-      industry: body.industry || '',
-      targetMarket: body.targetMarket || '',
-      yearFounded: body.yearFounded || '',
-      teamSize: body.teamSize || '',
-      primaryGoal: body.primaryGoal || '',
-      runAds: body.runAds || '',
-      channels: Array.isArray(body.channels) ? (body.channels || []).join(', ') : (body.channels || ''),
-      budget: body.budget || '',
-      targetAudience: body.targetAudience || '',
-      competitors: body.competitors || '',
-      timeline: body.timeline || '',
-      servicesNeeded: Array.isArray(body.servicesNeeded) ? (body.servicesNeeded || []).join(', ') : (body.servicesNeeded || ''),
-      fullName: body.fullName || '',
-      email: body.email || '',
-      phone: body.phone || '',
-      role: body.role || '',
-      leadStatus: 'New',
-      notes: '',
+      'Timestamp': new Date().toISOString(),
+      'Brand Name': body.brandName || '',
+      'Website': body.website || '',
+      'Industry': body.industry || '',
+      'Target Market': body.targetMarket || '',
+      'Year Founded': body.yearFounded || '',
+      'Team Size': body.teamSize || '',
+      'Primary Goal': body.primaryGoal || '',
+      'Run Ads': body.runAds || '',
+      'Channels': Array.isArray(body.channels) ? (body.channels || []).join(', ') : (body.channels || ''),
+      'Budget': body.budget || '',
+      'Target Audience': body.targetAudience || '',
+      'Competitors': body.competitors || '',
+      'Timeline': body.timeline || '',
+      'Services Needed': body.servicesNeeded || '',
+      'Full Name': body.fullName || '',
+      'Email': body.email || '',
+      'Phone': body.phone || '',
+      'Role': body.role || '',
+      'Lead Status': 'New',
+      'Notes': '',
     }
 
-    console.log('Sending to Google Sheets:', formData)
-    console.log('primaryGoal:', formData.primaryGoal)
-    console.log('servicesNeeded:', formData.servicesNeeded)
+    console.log('=== FORM DATA TO GOOGLE SHEETS ===')
+    console.log('Primary Goal:', formData['Primary Goal'])
+    console.log('Services Needed:', formData['Services Needed'])
+    console.log('Full payload:', JSON.stringify(formData, null, 2))
 
     // Send to Google Apps Script Webhook
     const response = await fetch(APPS_SCRIPT_WEBHOOK_URL, {
