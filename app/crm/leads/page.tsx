@@ -506,6 +506,23 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
 
       {/* Edit Lead Modal */}
       {editingLead && (
+        <EditLeadModal
+          lead={editingLead}
+          onClose={() => setEditingLead(null)}
+          onSave={updateLead}
+          saving={updatingEmail === editingLead.email}
+        />
+      )}
+    </div>
+  )
+}
+
+function TableHeader({ label, field, sort, currentSort }: any) {
+  return (
+    <th
+      className={`p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${field ? 'cursor-pointer hover:text-white transition-colors' : ''}`}
+      onClick={() => field && sort(field)}
+    >
       <div className="flex items-center gap-1">
         {label}
         {field && currentSort === field && (
@@ -513,84 +530,6 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
         )}
       </div>
     </th>
-  )
-}
-
-function LeadDetailPanel({ lead, onClose }: { lead: Lead, onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md glass-card overflow-y-auto animate-in slide-in-from-right duration-300">
-        <div className="sticky top-0 flex items-center justify-between p-6 border-b border-white/[0.05] bg-[#0a0a0f]">
-          <h2 className="text-xl font-bold text-white">Lead Details</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div className="p-6 space-y-6">
-          {/* Brand Info */}
-          <section>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Brand Information</h3>
-            <div className="space-y-3">
-              <InfoRow icon={Building2} label="Brand Name" value={lead.brandname} />
-              {lead.website && <InfoRow icon={Tag} label="Website" value={lead.website} isLink />}
-              <InfoRow icon={Tag} label="Industry" value={lead.industry} />
-              <InfoRow icon={Tag} label="Target Market" value={lead.targetmarket} />
-            </div>
-          </section>
-
-          {/* Contact Info */}
-          <section>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contact Information</h3>
-            <div className="space-y-3">
-              <InfoRow icon={Tag} label="Name" value={lead.fullname} />
-              <InfoRow icon={Tag} label="Email" value={lead.email} isLink={`mailto:${lead.email}`} />
-              <InfoRow icon={Tag} label="Phone" value={lead.phone} isLink={`tel:${lead.phone}`} />
-              <InfoRow icon={Tag} label="Role" value={lead.role} />
-            </div>
-          </section>
-
-          {/* Business */}
-          <section>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Business</h3>
-            <div className="space-y-3">
-              <InfoRow icon={Tag} label="Budget" value={lead.budget} />
-              <InfoRow icon={Tag} label="Timeline" value={lead.timeline} />
-            </div>
-          </section>
-
-          {/* Status */}
-          <section className="pt-4 border-t border-white/[0.05]">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Status</h3>
-            <span className={`text-sm px-3 py-1.5 rounded-lg border ${statusColors[lead.leadstatus] || statusColors["New"]}`}>
-              {lead.leadstatus || "New"}
-            </span>
-          </section>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function InfoRow({ icon: Icon, label, value, isLink }: any) {
-  if (!value) return null
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className="h-4 w-4 text-muted-foreground mt-0.5" />
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        {isLink ? (
-          <a href={typeof isLink === "string" ? isLink : value} className="text-sm text-blue-400 hover:underline">
-            {value}
-          </a>
-        ) : (
-          <p className="text-sm text-white">{value}</p>
-        )}
-      </div>
-    </div>
   )
 }
 
