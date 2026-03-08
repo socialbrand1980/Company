@@ -25,6 +25,7 @@ interface FunnelData {
 interface MonthlyData {
   month: string
   year: number
+  label: string
   value: number
   count: number
   clients: string[]
@@ -187,7 +188,8 @@ export default function CRMAnalyticsPage() {
       if (!data[key]) {
         data[key] = {
           month: label,
-          year: year,
+          label: label,
+          year: periodYear,
           value: 0,
           count: 0,
           clients: []
@@ -207,8 +209,10 @@ export default function CRMAnalyticsPage() {
       if (a.year !== b.year) return a.year - b.year
       if (a.month !== b.month) return a.month - b.month
       // Handle week/day sorting
-      const aNum = parseInt(String(a.label).replace('W', ''))
-      const bNum = parseInt(String(b.label).replace('W', ''))
+      const aLabel = String(a.label || a.month)
+      const bLabel = String(b.label || b.month)
+      const aNum = parseInt(aLabel.replace('W', ''))
+      const bNum = parseInt(bLabel.replace('W', ''))
       return aNum - bNum
     })
 
