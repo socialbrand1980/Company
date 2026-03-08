@@ -33,6 +33,9 @@ export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
   const [timeRange, setTimeRange] = useState<"6m" | "12m" | "all">("12m")
+  const [viewMode, setViewMode] = useState<"daily" | "monthly" | "yearly">("monthly")
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth())
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
 
   useEffect(() => {
@@ -52,12 +55,12 @@ export default function CRMAnalyticsPage() {
     fetchLeads()
   }, [])
 
-  // Process monthly revenue data
+  // Process revenue data based on view mode
   useEffect(() => {
     if (leads.length === 0) return
 
-    const months: { [key: string]: MonthlyData } = {}
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const data: { [key: string]: MonthlyData } = {}
 
     leads.forEach((lead: Lead) => {
       if (lead.leadstatus !== 'Closed Won') return
@@ -65,15 +68,33 @@ export default function CRMAnalyticsPage() {
       const date = new Date(lead.timestamp || Date.now())
       const year = date.getFullYear()
       const month = date.getMonth()
-      const monthKey = `${year}-${month}`
+      const day = date.getDate()
+      
+      // Filter by selected year and month based on view mode
+      if (viewMode === "yearly" && year !== selectedYear) return
+      if (viewMode === "monthly" && (year !== selectedYear || month !== selectedMonth)) return
+      
+      let key: string
+      let label: string
+      
+      if (viewMode === "daily") {
+        key = `${year}-${month}-${day}`
+        label = `${day} ${monthNames[month]}`
+      } else if (viewMode === "monthly") {
+        key = `${year}-${month}`
+        label = monthNames[month]
+      } else {
+        key = `${year}`
+        label = `${year}`
+      }
       
       const budgetValue = typeof lead.budget === 'string' 
         ? parseInt(lead.budget.replace(/[^0-9]/g, '')) || 0
         : (lead.budget as number) || 0
 
-      if (!months[monthKey]) {
-        months[monthKey] = {
-          month: monthNames[month],
+      if (!data[key]) {
+        data[key] = {
+          month: label,
           year: year,
           value: 0,
           count: 0,
@@ -81,25 +102,19 @@ export default function CRMAnalyticsPage() {
         }
       }
 
-      months[monthKey].value += budgetValue
-      months[monthKey].count += 1
-      months[monthKey].clients.push(lead.brandname || 'Unknown')
+      data[key].value += budgetValue
+      data[key].count += 1
+      data[key].clients.push(lead.brandname || 'Unknown')
     })
 
-    const sortedData = Object.values(months).sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year
-      return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+    const sortedData = Object.values(data).sort((a, b) => {
+      if (viewMode === "yearly") return a.year - b.year
+      if (viewMode === "monthly") return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      return a.year - b.year || monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
 
-    let filteredData = sortedData
-    if (timeRange === "6m") {
-      filteredData = sortedData.slice(-6)
-    } else if (timeRange === "12m") {
-      filteredData = sortedData.slice(-12)
-    }
-
-    setMonthlyData(filteredData)
-  }, [leads, timeRange])
+    setMonthlyData(sortedData)
+  }, [leads, viewMode, selectedYear, selectedMonth])
 
   // Calculate stats
   const stats = {
@@ -263,35 +278,79 @@ export default function CRMAnalyticsPage() {
             <div className="flex items-center gap-3">
               <BarChart3 className="h-6 w-6 text-green-400" />
               <div>
-                <h3 className="text-lg font-semibold text-white">Revenue Trend</h3>
-                <p className="text-sm text-muted-foreground mt-1">Monthly revenue from closed deals</p>
+                <h3 className="text-lg font-semibold text-white">Revenue by Period</h3>
+                <p className="text-sm text-muted-foreground mt-1">Closed deals revenue breakdown</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {(["6m", "12m", "all"] as const).map((range) => (
+              {/* View Mode Filter */}
+              <div className="flex items-center gap-1 bg-white/[0.03] rounded-lg p-1">
                 <button
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    timeRange === range
+                  onClick={() => setViewMode("daily")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "daily"
                       ? "bg-blue-500 text-white"
-                      : "bg-white/[0.03] text-muted-foreground hover:text-white"
+                      : "text-muted-foreground hover:text-white"
                   }`}
                 >
-                  {range === "6m" ? "6M" : range === "12m" ? "12M" : "All"}
+                  Daily
                 </button>
-              ))}
+                <button
+                  onClick={() => setViewMode("monthly")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "monthly"
+                      ? "bg-blue-500 text-white"
+                      : "text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setViewMode("yearly")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "yearly"
+                      ? "bg-blue-500 text-white"
+                      : "text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
+              
+              {/* Year Filter */}
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                {Array.from(new Set(leads.map((l: Lead) => new Date(l.timestamp || Date.now()).getFullYear()))).sort((a, b) => b - a).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              
+              {/* Month Filter (only for daily view) */}
+              {viewMode === "daily" && (
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+                >
+                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
+                    <option key={i} value={i}>{month}</option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
           <div className="flex items-end justify-between gap-2 h-48">
             {monthlyData.length > 0 ? (
-              monthlyData.map((data) => {
+              monthlyData.map((data, index) => {
                 const maxValue = Math.max(...monthlyData.map(d => d.value), 1)
                 const height = (data.value / maxValue) * 100
                 
                 return (
-                  <div key={`${data.month}-${data.year}`} className="flex-1 flex flex-col items-center gap-2 group">
+                  <div key={`${data.month}-${data.year}-${index}`} className="flex-1 flex flex-col items-center gap-2 group">
                     <div className="relative w-full">
                       <div
                         className="w-full bg-gradient-to-t from-green-500/30 to-green-500 rounded-t-lg transition-all duration-500 hover:from-green-400/40 hover:to-green-400"
@@ -302,16 +361,19 @@ export default function CRMAnalyticsPage() {
                           <p className="text-xs font-medium text-white mb-1">{data.month} {data.year}</p>
                           <p className="text-sm font-bold text-green-400 mb-2">{formatIDR(data.value)}</p>
                           <p className="text-xs text-muted-foreground">{data.count} deal{data.count !== 1 ? 's' : ''}</p>
+                          {data.clients.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate">{data.clients.slice(0, 3).join(', ')}{data.clients.length > 3 ? ` +${data.clients.length - 3}` : ''}</p>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">{data.month}</span>
+                    <span className="text-xs text-muted-foreground">{viewMode === "daily" ? data.month : data.month}</span>
                   </div>
                 )
               })
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <p className="text-muted-foreground">No closed deals yet</p>
+                <p className="text-muted-foreground">No closed deals in this period</p>
               </div>
             )}
           </div>
