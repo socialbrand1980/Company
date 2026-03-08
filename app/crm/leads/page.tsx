@@ -979,28 +979,26 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
     console.log('Form submitted')
     setSaving(true)
     try {
-      // Map form data to spreadsheet column names
+      // Map form data to spreadsheet column names (must match API expectations)
       const leadData = {
-        brandname: formData.brandName,
+        brandName: formData.brandName,
         website: formData.website,
         industry: formData.industry,
-        targetmarket: formData.targetMarket,
-        yearfounded: formData.yearFounded,
-        teamsize: formData.teamSize,
-        primarygoal: formData.primaryGoal,
-        runads: formData.runAds,
+        targetMarket: formData.targetMarket,
+        yearFounded: formData.yearFounded,
+        teamSize: formData.teamSize,
+        primaryGoal: formData.primaryGoal,
+        runAds: formData.runAds,
         channels: formData.channels.join(', '),
         budget: formData.budget,
-        targetaudience: formData.targetAudience,
+        targetAudience: formData.targetAudience,
         competitors: formData.competitors,
         timeline: formData.timeline,
-        servicesneeded: formData.servicesNeeded,
-        fullname: formData.fullName,
+        servicesNeeded: formData.servicesNeeded,
+        fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
         role: formData.role,
-        leadstatus: 'New',
-        notes: '',
       }
       console.log('Lead data to save:', leadData)
       await onAdd(leadData)
