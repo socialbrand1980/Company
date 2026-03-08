@@ -306,10 +306,19 @@ export default function CRMPipelinePage() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-white/[0.05]">
                         <Calendar className="h-3 w-3" />
                         <span>
-                          {new Date(lead.timestamp).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
+                          {lead.timestamp ? (() => {
+                            try {
+                              const date = new Date(lead.timestamp)
+                              if (isNaN(date.getTime())) return 'N/A'
+                              return date.toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })
+                            } catch {
+                              return 'N/A'
+                            }
+                          })() : 'N/A'}
                         </span>
                       </div>
                     </div>

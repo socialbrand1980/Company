@@ -307,11 +307,19 @@ export default function CRMDashboard() {
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-muted-foreground">
-                      {new Date(lead.timestamp).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {lead.timestamp ? (() => {
+                        try {
+                          const date = new Date(lead.timestamp)
+                          if (isNaN(date.getTime())) return 'N/A'
+                          return date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })
+                        } catch {
+                          return 'N/A'
+                        }
+                      })() : 'N/A'}
                     </span>
                   </td>
                 </tr>
