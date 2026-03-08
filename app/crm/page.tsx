@@ -56,9 +56,16 @@ function formatTimestamp(timestamp: any): string {
     else {
       console.log('Parsing as string')
       const dateStr = String(timestamp)
+      console.log('Date string:', dateStr)
       
-      // Handle ISO format (from new submissions)
-      if (dateStr.includes('T')) {
+      // Handle ISO format (from API submissions) - CHECK FIRST
+      if (dateStr.includes('T') && dateStr.includes('Z')) {
+        console.log('Detected ISO format with Z')
+        date = new Date(dateStr)
+      }
+      // Handle ISO format without Z
+      else if (dateStr.includes('T')) {
+        console.log('Detected ISO format')
         date = new Date(dateStr)
       }
       // Handle Google Sheets format: DD/MM/YYYY HH:MM:SS
