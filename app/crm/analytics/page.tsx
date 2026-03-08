@@ -141,26 +141,43 @@ export default function CRMAnalyticsPage() {
 
       // Determine grouping based on date range
       let groupByDay = false
+      let groupByWeek = false
+      
       if (startTimestamp !== null && endTimestamp !== null) {
         const rangeDays = Math.ceil((endTimestamp - startTimestamp) / (1000 * 60 * 60 * 24))
-        groupByDay = rangeDays <= 31
+        groupByDay = rangeDays <= 14  // Group by day for ≤2 weeks
+        groupByWeek = rangeDays > 14 && rangeDays <= 90  // Group by week for 2 weeks - 3 months
       } else if (startTimestamp !== null && endTimestamp === null) {
         // Only start date (e.g., "Today")
         groupByDay = true
       } else if (startTimestamp === null && endTimestamp === null) {
         // All time - group by month
         groupByDay = false
+        groupByWeek = false
       }
 
       let key: string
       let label: string
+      let periodYear: number
+      let periodMonth: number
 
       if (groupByDay) {
         key = `${year}-${month}-${day}`
         label = `${day}`
+        periodYear = year
+        periodMonth = month
+      } else if (groupByWeek) {
+        // Calculate week number
+        const weekNumber = Math.ceil(day / 7)
+        key = `${year}-${month}-W${weekNumber}`
+        label = `W${weekNumber}`
+        periodYear = year
+        periodMonth = month
       } else {
         key = `${year}-${month}`
         label = monthNames[month]
+        periodYear = year
+        periodMonth = month
       }
 
       const budgetValue = typeof lead.budget === 'string'
@@ -188,7 +205,11 @@ export default function CRMAnalyticsPage() {
 
     const sortedData = Object.values(data).sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year
-      return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      if (a.month !== b.month) return a.month - b.month
+      // Handle week/day sorting
+      const aNum = parseInt(a.label.replace('W', ''))
+      const bNum = parseInt(b.label.replace('W', ''))
+      return aNum - bNum
     })
 
     console.log('Sorted data:', sortedData)
@@ -367,39 +388,97 @@ export default function CRMAnalyticsPage() {
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-2 h-48">
-            {monthlyData.length > 0 ? (
-              monthlyData.map((data, index) => {
-                const maxValue = Math.max(...monthlyData.map(d => d.value), 1)
-                const height = (data.value / maxValue) * 100
-                
-                return (
-                  <div key={`${data.month}-${data.year}-${index}`} className="flex-1 flex flex-col items-center gap-2 group">
-                    <div className="relative w-full">
-                      <div
-                        className="w-full bg-gradient-to-t from-green-500/30 to-green-500 rounded-t-lg transition-all duration-500 hover:from-green-400/40 hover:to-green-400"
-                        style={{ height: `${Math.max(height, 2)}%`, minHeight: '8px' }}
-                      />
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                        <div className="glass-card rounded-lg p-3 min-w-[180px] shadow-xl">
-                          <p className="text-xs font-medium text-white mb-1">{data.month} {data.year}</p>
-                          <p className="text-sm font-bold text-green-400 mb-2">{formatIDR(data.value)}</p>
-                          <p className="text-xs text-muted-foreground">{data.count} deal{data.count !== 1 ? 's' : ''}</p>
-                          {data.clients.length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-1 truncate">{data.clients.slice(0, 3).join(', ')}{data.clients.length > 3 ? ` +${data.clients.length - 3}` : ''}</p>
-                          )}
+          <div className="space-y-4">
+            {/* Chart Area */}
+            <div className="h-64 flex items-end gap-1 relative">
+              {/* Grid lines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                {[100, 75, 50, 25, 0].map((percent) => (
+                  <div key={percent} className="flex items-center gap-2">
+                    <div className="w-full h-px bg-white/[0.05]" />
+                    <span className="text-xs text-muted-foreground w-12 text-right">{percent}%</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Bars with gradient */}
+              {monthlyData.length > 0 ? (
+                monthlyData.map((data, index) => {
+                  const maxValue = Math.max(...monthlyData.map(d => d.value), 1)
+                  const height = (data.value / maxValue) * 100
+                  
+                  return (
+                    <div
+                      key={`${data.month}-${data.year}-${index}`}
+                      className="flex-1 flex flex-col items-center gap-2 group relative z-10"
+                    >
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                        <div className="glass-card rounded-lg p-3 min-w-[200px] shadow-xl border border-white/[0.12]">
+                          <p className="text-xs font-medium text-white mb-2">
+                            {data.month} {data.year}
+                          </p>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs text-muted-foreground">Revenue:</span>
+                              <span className="text-sm font-bold text-green-400">{formatIDR(data.value)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs text-muted-foreground">Deals:</span>
+                              <span className="text-xs text-white">{data.count} deal{data.count !== 1 ? 's' : ''}</span>
+                            </div>
+                            {data.clients.length > 0 && (
+                              <div className="pt-2 mt-2 border-t border-white/[0.08]">
+                                <p className="text-xs text-muted-foreground mb-1">Clients:</p>
+                                <p className="text-xs text-white truncate">{data.clients.join(', ')}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Bar with gradient */}
+                      <div className="w-full relative flex-1 flex items-end">
+                        <div
+                          className="w-full bg-gradient-to-t from-green-500/80 via-green-400/60 to-green-300/40 rounded-t-lg transition-all duration-500 group-hover:from-green-500 group-hover:via-green-400 group-hover:to-green-300 relative"
+                          style={{ height: `${Math.max(height, 2)}%`, minHeight: '4px' }}
+                        >
+                          {/* Top glow */}
+                          <div className="absolute -top-1 left-0 right-0 h-2 bg-green-400/30 blur-sm rounded-full" />
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground rotate-0 whitespace-nowrap">{data.month}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{data.month}</span>
-                  </div>
-                )
-              })
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <p className="text-muted-foreground">No closed deals in this period</p>
+                  )
+                })
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">No closed deals in this period</p>
+                </div>
+              )}
+            </div>
+
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/[0.08]">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Total Revenue</p>
+                <p className="text-lg font-bold text-green-400">
+                  {formatIDR(monthlyData.reduce((sum, d) => sum + d.value, 0))}
+                </p>
               </div>
-            )}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Total Deals</p>
+                <p className="text-lg font-bold text-white">
+                  {monthlyData.reduce((sum, d) => sum + d.count, 0)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Avg per Period</p>
+                <p className="text-lg font-bold text-blue-400">
+                  {formatIDR(monthlyData.reduce((sum, d) => sum + d.value, 0) / monthlyData.length)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
