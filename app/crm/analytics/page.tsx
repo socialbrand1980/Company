@@ -203,10 +203,70 @@ export default function CRMAnalyticsPage() {
             <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-1">Complete insights from leads to closed deals</p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* View Mode Filter */}
+            <div className="flex items-center gap-1 bg-white/[0.03] rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("daily")}
+                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === "daily"
+                    ? "bg-blue-500 text-white"
+                    : "text-muted-foreground hover:text-white"
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setViewMode("monthly")}
+                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === "monthly"
+                    ? "bg-blue-500 text-white"
+                    : "text-muted-foreground hover:text-white"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setViewMode("yearly")}
+                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  viewMode === "yearly"
+                    ? "bg-blue-500 text-white"
+                    : "text-muted-foreground hover:text-white"
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+            
+            {/* Year Filter */}
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+            >
+              {Array.from(new Set(leads.map((l: Lead) => new Date(l.timestamp || Date.now()).getFullYear()))).sort((a, b) => b - a).map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            
+            {/* Month Filter (only for daily view) */}
+            {viewMode === "daily" && (
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
+                  <option key={i} value={i}>{month}</option>
+                ))}
+              </select>
+            )}
+            
+            <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </div>
 
         {/* Key Metrics */}
@@ -278,68 +338,16 @@ export default function CRMAnalyticsPage() {
             <div className="flex items-center gap-3">
               <BarChart3 className="h-6 w-6 text-green-400" />
               <div>
-                <h3 className="text-lg font-semibold text-white">Revenue by Period</h3>
-                <p className="text-sm text-muted-foreground mt-1">Closed deals revenue breakdown</p>
+                <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {viewMode === "daily" 
+                    ? `Daily revenue for ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}`
+                    : viewMode === "monthly"
+                    ? `Monthly revenue for ${selectedYear}`
+                    : `Yearly revenue overview`
+                  }
+                </p>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* View Mode Filter */}
-              <div className="flex items-center gap-1 bg-white/[0.03] rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("daily")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    viewMode === "daily"
-                      ? "bg-blue-500 text-white"
-                      : "text-muted-foreground hover:text-white"
-                  }`}
-                >
-                  Daily
-                </button>
-                <button
-                  onClick={() => setViewMode("monthly")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    viewMode === "monthly"
-                      ? "bg-blue-500 text-white"
-                      : "text-muted-foreground hover:text-white"
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setViewMode("yearly")}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    viewMode === "yearly"
-                      ? "bg-blue-500 text-white"
-                      : "text-muted-foreground hover:text-white"
-                  }`}
-                >
-                  Yearly
-                </button>
-              </div>
-              
-              {/* Year Filter */}
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-              >
-                {Array.from(new Set(leads.map((l: Lead) => new Date(l.timestamp || Date.now()).getFullYear()))).sort((a, b) => b - a).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-              
-              {/* Month Filter (only for daily view) */}
-              {viewMode === "daily" && (
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
-                >
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
-                    <option key={i} value={i}>{month}</option>
-                  ))}
-                </select>
-              )}
             </div>
           </div>
 
