@@ -124,6 +124,7 @@ export function BrandIntakeForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted with data:', formData)
     setLoading(true)
     setError("")
 
@@ -136,11 +137,14 @@ export function BrandIntakeForm() {
         body: JSON.stringify(formData),
       })
 
+      console.log('API Response status:', response.status)
+      const result = await response.json()
+      console.log('API Response:', result)
+
       if (response.ok) {
         setSubmitted(true)
         setFormData(initialData)
       } else {
-        const result = await response.json()
         setError(result.error || 'Failed to submit form. Please try again.')
       }
     } catch (err) {
