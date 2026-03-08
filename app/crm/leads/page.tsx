@@ -391,7 +391,22 @@ export default function CRMLeadsPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          const phone = String(lead.phone || '').replace(/[^0-9]/g, '') || '62811198093'
+                          // Convert phone to string and clean
+                          let phone = String(lead.phone || '').replace(/[^0-9]/g, '')
+                          
+                          // Format to international format (+62)
+                          if (phone.startsWith('0')) {
+                            phone = '62' + phone.substring(1)
+                          } else if (phone.startsWith('62')) {
+                            // Already has 62, keep it
+                          } else if (phone.length <= 13) {
+                            // Assume it's a local number without country code
+                            phone = '62' + phone
+                          }
+                          
+                          // Fallback if still empty
+                          phone = phone || '62811198093'
+                          
                           const brandName = lead.brandname || lead.fullname || 'Customer'
                           const industry = lead.industry || 'their industry'
                           const goal = lead.primarygoal ? ` dengan tujuan: ${String(lead.primarygoal).substring(0, 100)}${String(lead.primarygoal).length > 100 ? '...' : ''}` : ''
