@@ -262,6 +262,7 @@ export default function CRMLeadsPage() {
                 <TableHeader label="Brand" field="brandname" sort={handleSort} currentSort={sortField} />
                 <TableHeader label="Contact" field="fullname" sort={handleSort} currentSort={sortField} />
                 <TableHeader label="Industry" field="industry" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Primary Goal" field="primarygoal" sort={handleSort} currentSort={sortField} />
                 <TableHeader label="Budget" field="budget" sort={handleSort} currentSort={sortField} />
                 <TableHeader label="Services" />
                 <TableHeader label="Timeline" field="timeline" sort={handleSort} currentSort={sortField} />
@@ -308,6 +309,11 @@ export default function CRMLeadsPage() {
                       <p className="text-sm text-white">{lead.industry}</p>
                       <p className="text-xs text-muted-foreground">{lead.targetmarket}</p>
                     </div>
+                  </td>
+                  <td className="p-4 max-w-[200px]">
+                    <p className="text-sm text-white line-clamp-2" title={lead.primarygoal}>
+                      {lead.primarygoal || "N/A"}
+                    </p>
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
@@ -386,8 +392,26 @@ export default function CRMLeadsPage() {
                         onClick={(e) => {
                           e.stopPropagation()
                           const phone = lead.phone?.replace(/[^0-9]/g, '') || '62811198093'
-                          const message = encodeURIComponent(`Hi ${lead.fullname || lead.brandname}! Saya dari SocialBrand 1980. Saya lihat Anda tertarik dengan layanan kami. Ada yang bisa saya bantu?`)
-                          window.open(`https://wa.me/${phone}?text=${message}`, '_blank')
+                          const brandName = lead.brandname || lead.fullname || 'Customer'
+                          const industry = lead.industry || 'their industry'
+                          const goal = lead.primarygoal ? ` dengan tujuan: ${lead.primarygoal.substring(0, 100)}${lead.primarygoal.length > 100 ? '...' : ''}` : ''
+                          
+                          const message = `Halo ${lead.fullname || 'Bapak/Ibu'} dari ${brandName}! 👋
+
+Saya dari SocialBrand 1980. Terima kasih telah tertarik dengan layanan kami.
+
+Saya lihat ${brandName} bergerak di bidang ${industry}${goal}.
+
+Saya ingin membantu ${brandName} untuk tumbuh lebih pesat. Apakah ada waktu untuk diskusi singkat minggu ini?
+
+Best regards,
+SocialBrand 1980 Team`
+                          
+                          const encodedMessage = encodeURIComponent(message)
+                          const waUrl = `https://wa.me/${phone}?text=${encodedMessage}`
+                          
+                          // Open WhatsApp
+                          window.open(waUrl, '_blank')
                         }}
                         className="p-2 hover:bg-green-500/10 rounded-lg transition-colors"
                         title="Chat on WhatsApp"
@@ -399,8 +423,20 @@ export default function CRMLeadsPage() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation()
-                          const subject = encodeURIComponent(`Regarding Your Interest in SocialBrand 1980`)
-                          const body = encodeURIComponent(`Hi ${lead.fullname || lead.brandname},\n\nThank you for your interest in our services. We'd love to help you grow your brand.\n\nBest regards,\nSocialBrand 1980 Team`)
+                          const subject = encodeURIComponent(`Regarding Your Interest in SocialBrand 1980 - ${lead.brandname || lead.fullname}`)
+                          const body = encodeURIComponent(`Hi ${lead.fullname || lead.brandname},
+
+Thank you for your interest in SocialBrand 1980 services.
+
+Brand: ${lead.brandname || 'N/A'}
+Industry: ${lead.industry || 'N/A'}
+Goal: ${lead.primarygoal || 'N/A'}
+
+We'd love to help you grow your brand. Let's schedule a call to discuss how we can work together.
+
+Best regards,
+SocialBrand 1980 Team
+${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
                           window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`, '_blank')
                         }}
                         className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors"
