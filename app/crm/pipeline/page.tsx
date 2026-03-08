@@ -287,6 +287,14 @@ export default function CRMPipelinePage() {
                         <span className="truncate">{lead.fullname}</span>
                       </div>
 
+                      {lead.primarygoal && (
+                        <div className="pt-2 mt-2 border-t border-white/[0.05]">
+                          <p className="text-xs text-muted-foreground line-clamp-2" title={lead.primarygoal}>
+                            {lead.primarygoal}
+                          </p>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-1 pt-2">
                         {lead.servicesneeded?.split(",").slice(0, 2).map((service: string, i: number) => (
                           <span key={i} className="text-xs px-2 py-1 rounded bg-white/[0.05] text-muted-foreground truncate">
