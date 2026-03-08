@@ -443,10 +443,18 @@ export default function CRMAnalyticsPage() {
         document.body.removeChild(a)
         
         console.log('✅ Report downloaded successfully')
+        alert('✅ Report generated successfully! Check your downloads folder.')
       } else {
         const error = await response.json()
         console.error('Export failed:', error)
-        alert('Failed to export report: ' + (error.error || 'Unknown error'))
+        
+        // Show detailed error message
+        let errorMsg = 'Failed to export report. '
+        if (error.error) errorMsg += `\n\nError: ${error.error}`
+        if (error.message) errorMsg += `\nMessage: ${error.message}`
+        if (error.stderr) errorMsg += `\n\nDetails: ${error.stderr}`
+        
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Export error:', error)

@@ -22,27 +22,47 @@ export async function POST(request: NextRequest) {
     // Get absolute path to Python script
     const scriptPath = path.join(process.cwd(), 'scripts', 'generate_report.py')
     
+    console.log('📍 Script path:', scriptPath)
+    
+    // Check if script exists
+    if (!fs.existsSync(scriptPath)) {
+      console.error('❌ Python script not found:', scriptPath)
+      return NextResponse.json(
+        { error: 'Python script not found', path: scriptPath },
+        { status: 500 }
+      )
+    }
+    
     // Check if Python is available
     const pythonCommand = process.platform === 'win32' ? 'python' : 'python3'
+    
+    console.log('🐍 Using Python command:', pythonCommand)
 
     return new Promise((resolve) => {
       // Spawn Python process
-      const pythonProcess = spawn(pythonCommand, [scriptPath, JSON.stringify(reportData)])
+      const pythonProcess = spawn(pythonCommand, [scriptPath, JSON.stringify(reportData)], {
+        cwd: process.cwd(),
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+      })
 
       let stdout = ''
       let stderr = ''
 
       pythonProcess.stdout.on('data', (data) => {
-        stdout += data.toString()
-        console.log('Python stdout:', data.toString())
+        const str = data.toString()
+        stdout += str
+        console.log('Python stdout:', str)
       })
 
       pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString()
-        console.error('Python stderr:', data.toString())
+        const str = data.toString()
+        stderr += str
+        console.error('Python stderr:', str)
       })
 
       pythonProcess.on('close', (code) => {
+        console.log('Python process closed with code:', code)
+        
         if (code === 0) {
           // Parse Python output
           const lines = stdout.trim().split('\n')
@@ -55,19 +75,22 @@ export async function POST(request: NextRequest) {
               // Read the generated PDF
               const pdfPath = path.join(process.cwd(), result.file)
               
+              console.log('📄 Looking for PDF at:', pdfPath)
+              
               if (fs.existsSync(pdfPath)) {
                 const pdfBuffer = fs.readFileSync(pdfPath)
                 
-                // Clean up temporary files
+                console.log('✅ PDF read successfully, size:', pdfBuffer.length, 'bytes')
+                
+                // Clean up temporary chart files
                 result.charts?.forEach((chartPath: string) => {
                   if (fs.existsSync(chartPath)) {
+                    console.log('🧹 Cleaning up chart:', chartPath)
                     fs.unlinkSync(chartPath)
                   }
                 })
-                // Optionally delete PDF after sending (or keep it)
-                // fs.unlinkSync(pdfPath)
                 
-                console.log('✅ Report generated successfully')
+                console.log('📤 Sending PDF response...')
                 
                 resolve(
                   new NextResponse(pdfBuffer, {
@@ -78,55 +101,59 @@ export async function POST(request: NextRequest) {
                   })
                 )
               } else {
+                console.error('❌ PDF file not found at:', pdfPath)
                 resolve(
                   NextResponse.json(
-                    { error: 'PDF file not found' },
+                    { error: 'PDF file not found', path: pdfPath, stdout, stderr },
                     { status: 500 }
                   )
                 )
               }
             } else {
+              console.error('❌ Python script returned failure')
               resolve(
                 NextResponse.json(
-                  { error: 'Failed to generate report' },
+                  { error: 'Failed to generate report', result, stdout, stderr },
                   { status: 500 }
                 )
               )
             }
-          } catch (e) {
-            console.log('Full output:', stdout)
+          } catch (e: any) {
+            console.error('❌ Failed to parse Python output:', e.message)
+            console.log('Full stdout:', stdout)
             resolve(
               NextResponse.json(
-                { error: 'Failed to parse Python output', details: stderr },
+                { error: 'Failed to parse Python output', message: e.message, stdout, stderr },
                 { status: 500 }
               )
             )
           }
         } else {
+          console.error('❌ Python script failed with code:', code)
           resolve(
             NextResponse.json(
-              { error: 'Python script failed', code, stderr },
+              { error: 'Python script failed', code, stdout, stderr },
               { status: 500 }
             )
           )
         }
       })
 
-      pythonProcess.on('error', (err) => {
-        console.error('Failed to start Python process:', err)
+      pythonProcess.on('error', (err: any) => {
+        console.error('❌ Failed to start Python process:', err.message)
         resolve(
           NextResponse.json(
-            { error: 'Failed to start Python process', message: err.message },
+            { error: 'Failed to start Python process', message: err.message, stderr },
             { status: 500 }
           )
         )
       })
     })
 
-  } catch (error) {
-    console.error('Export error:', error)
+  } catch (error: any) {
+    console.error('❌ Export error:', error.message)
     return NextResponse.json(
-      { error: 'Failed to export report' },
+      { error: 'Failed to export report', message: error.message },
       { status: 500 }
     )
   }
