@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const SPREADSHEET_ID = '13ruAstGIxEl9y-9BQ1eWJsfTkYiwPAYK5obLug2q7N0'
 
 // Google Apps Script Webhook URL for updates
-const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwCxbm5mXSBFKiPg8yAOpERNBQMsnaHvDPHX9BoTheB4S7LpxLa0qJypJ7TxwCnmQNT/exec'
+const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwXg7tWwFqqDca60Ex3gAx_uQybHACzyk-VrDgOu17OuF-NOwo5llYnIf8Cjuzo86NW/exec'
 
 export async function GET(request: NextRequest) {
   try {
