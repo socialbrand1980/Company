@@ -206,8 +206,14 @@ export default function CRMAnalyticsPage() {
     console.log('Grouped data:', data)
 
     const sortedData = Object.values(data).sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year
-      if (a.month !== b.month) return a.month - b.month
+      // Year sorting
+      if (a.year !== b.year) {
+        return Number(a.year) - Number(b.year)
+      }
+      // Month sorting (0-11)
+      if (a.month !== b.month) {
+        return Number(a.month) - Number(b.month)
+      }
       // Handle week/day sorting
       const aLabel = String(a.label || a.month)
       const bLabel = String(b.label || b.month)
