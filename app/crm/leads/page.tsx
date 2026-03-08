@@ -33,6 +33,79 @@ import {
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
 
+// Helper function to format timestamp - simple DD/MM/YYYY format
+function formatTimestamp(timestamp: any): string {
+  if (!timestamp) return 'N/A'
+
+  try {
+    let date: Date
+
+    // If it's already a Date object (from Google Sheets)
+    if (timestamp instanceof Date) {
+      date = timestamp
+    }
+    // If it's a string that looks like "Date(2026,2,8,8,39,19)"
+    else if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
+      const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+      if (match) {
+        const [, year, month, day, hour, minute, second] = match
+        // Google Sheets Date() uses 0-indexed month like JS (0=January, 11=December)
+        // So Date(2026,2,8,...) means March 8, 2026 (month 2 = March)
+        date = new Date(Date.UTC(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second)))
+      } else {
+        date = new Date(timestamp)
+      }
+    }
+    // If it's a number (Unix timestamp)
+    else if (typeof timestamp === 'number') {
+      date = new Date(timestamp)
+    }
+    // If it's a regular string
+    else {
+      const dateStr = String(timestamp)
+
+      // Handle ISO format (from API submissions)
+      if (dateStr.includes('T')) {
+        date = new Date(dateStr)
+      }
+      // Handle Google Sheets format: DD/MM/YYYY HH:MM:SS
+      else if (dateStr.includes('/') && dateStr.includes(':')) {
+        const parts = dateStr.split(' ')
+        const datePart = parts[0] // DD/MM/YYYY
+        const [day, month, year] = datePart.split('/')
+        date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+      }
+      // Handle DD/MM/YYYY
+      else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/')
+        if (parts.length === 3) {
+          const [day, month, year] = parts
+          date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+        } else {
+          date = new Date(dateStr)
+        }
+      }
+      // Try direct parse
+      else {
+        date = new Date(dateStr)
+      }
+    }
+
+    if (isNaN(date.getTime())) {
+      return 'N/A'
+    }
+
+    // Use UTC methods to avoid timezone issues
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const year = date.getUTCFullYear()
+
+    return `${day}/${month}/${year}`
+  } catch {
+    return 'N/A'
+  }
+}
+
 interface Lead {
   timestamp: string
   brandname: string
