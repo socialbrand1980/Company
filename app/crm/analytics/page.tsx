@@ -93,9 +93,16 @@ export default function CRMAnalyticsPage() {
 
       // Get lead date and convert to timestamp at midnight
       const leadDate = new Date(lead.timestamp)
+      
+      // Check if date is valid
+      if (isNaN(leadDate.getTime())) {
+        console.log('Lead:', lead.brandname, '❌ Invalid timestamp:', lead.timestamp)
+        return
+      }
+      
       const leadTimestamp = new Date(leadDate.getFullYear(), leadDate.getMonth(), leadDate.getDate()).getTime()
       
-      console.log('Lead:', lead.brandname, 'Raw timestamp:', lead.timestamp, 'Parsed:', leadDate.toISOString(), 'Midnight:', new Date(leadTimestamp).toISOString())
+      console.log('Lead:', lead.brandname, 'Raw:', lead.timestamp, 'Parsed:', leadDate.toISOString(), 'Midnight:', new Date(leadTimestamp).toISOString())
 
       // Filter by date range using timestamps
       if (startTimestamp !== null && leadTimestamp < startTimestamp) {
