@@ -28,7 +28,8 @@ import {
   Users as UsersIcon,
   Briefcase,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  Plus
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
