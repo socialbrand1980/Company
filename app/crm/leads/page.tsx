@@ -399,12 +399,9 @@ export default function CRMLeadsPage() {
                     </p>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-white font-medium">
-                        {lead.budget ? formatIDR(lead.budget) : "N/A"}
-                      </span>
-                    </div>
+                    <span className="text-sm text-white font-medium">
+                      {lead.budget ? formatIDR(lead.budget) : "N/A"}
+                    </span>
                   </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1 max-w-[250px]">
