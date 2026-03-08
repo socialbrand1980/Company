@@ -28,11 +28,23 @@ function formatTimestamp(timestamp: any): string {
     if (timestamp instanceof Date) {
       date = timestamp
     }
+    // If it's a string that looks like "Date(2026,2,8,8,39,19)"
+    else if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
+      // Extract: year, month, day, hour, minute, second
+      const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+      if (match) {
+        const [, year, month, day, hour, minute, second] = match
+        // Month is 0-indexed in JS, but Google Sheets uses 1-indexed
+        date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
+      } else {
+        date = new Date(timestamp)
+      }
+    }
     // If it's a number (Unix timestamp)
     else if (typeof timestamp === 'number') {
       date = new Date(timestamp)
     }
-    // If it's a string
+    // If it's a regular string
     else {
       const dateStr = String(timestamp)
       
