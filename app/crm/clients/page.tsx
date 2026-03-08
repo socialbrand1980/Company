@@ -213,19 +213,24 @@ export default function CRMClientsPage() {
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => {
-                            const phone = client.phone?.replace(/[^0-9]/g, '') || ''
+                            const phoneStr = typeof client.phone === 'number' 
+                              ? String(client.phone)
+                              : (client.phone || '')
+                            const phone = phoneStr.replace(/[^0-9]/g, '')
                             let formattedPhone = phone
                             
                             // Format to international format (+62)
                             if (phone.startsWith('0')) {
                               formattedPhone = '62' + phone.substring(1)
-                            } else if (!phone.startsWith('62')) {
+                            } else if (!phone.startsWith('62') && phone.length > 0) {
                               formattedPhone = '62' + phone
                             }
                             
                             const message = encodeURIComponent(`Halo ${client.contactName} dari ${client.brandName}! 👋\n\nSaya dari SocialBrand 1980. Saya ingin mengikuti perkembangan project kita. Ada yang bisa saya bantu?\n\nBest regards,\nSocialBrand 1980 Team`)
                             
-                            window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank')
+                            if (formattedPhone) {
+                              window.open(`https://wa.me/${formattedPhone}?text=${message}`, '_blank')
+                            }
                           }}
                           className="p-2 hover:bg-green-500/10 rounded-lg transition-colors"
                           title="Chat on WhatsApp"
