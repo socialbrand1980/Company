@@ -603,21 +603,26 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
           onAdd={async (newLead) => {
             console.log('Adding new lead:', newLead)
             try {
-              const response = await fetch('/api/crm/leads', {
+              // Use /api/leads endpoint instead of /api/crm/leads
+              const response = await fetch('/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newLead),
               })
               console.log('Response status:', response.status)
+              const result = await response.json()
+              console.log('Response result:', result)
               if (response.ok) {
                 console.log('Lead added successfully')
                 await fetchLeads()
                 setShowAddLead(false)
               } else {
-                console.error('Failed to add lead')
+                console.error('Failed to add lead:', result)
+                alert('Failed to add lead: ' + (result.error || 'Unknown error'))
               }
             } catch (error) {
               console.error('Error adding lead:', error)
+              alert('Error: ' + (error instanceof Error ? error.message : 'Unknown error'))
             }
           }}
         />
