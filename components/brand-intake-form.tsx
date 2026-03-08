@@ -78,14 +78,6 @@ const teamSizeOptions = [
   "200+"
 ]
 
-const goalOptions = [
-  "Increase Sales",
-  "Generate Leads",
-  "Build Brand Awareness",
-  "Launch New Product",
-  "Scale Existing Campaign"
-]
-
 const channelOptions = [
   "Meta Ads",
   "Google Ads",
@@ -110,15 +102,6 @@ const timelineOptions = [
   "Just exploring"
 ]
 
-const serviceOptions = [
-  "Brand Strategy",
-  "Social Media Management",
-  "Content Production",
-  "Influencer Marketing",
-  "Performance Marketing",
-  "Omnichannel Strategy"
-]
-
 export function BrandIntakeForm() {
   const [formData, setFormData] = useState<FormData>(initialData)
   const [loading, setLoading] = useState(false)
@@ -127,16 +110,6 @@ export function BrandIntakeForm() {
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleCheckboxChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => {
-      const current = prev[field] as string[]
-      const updated = current.includes(value)
-        ? current.filter(item => item !== value)
-        : [...current, value]
-      return { ...prev, [field]: updated }
-    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -295,26 +268,16 @@ export function BrandIntakeForm() {
         </h3>
         
         <div>
-          <label className="text-sm font-medium text-foreground mb-3 block">Apa tujuan utama marketing Anda? *</label>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {goalOptions.map(option => (
-              <label
-                key={option}
-                className="flex items-center gap-3 p-4 rounded-lg border border-border/50 hover:border-primary/30 cursor-pointer transition-colors"
-              >
-                <input
-                  type="radio"
-                  name="primaryGoal"
-                  value={option}
-                  checked={formData.primaryGoal === option}
-                  onChange={(e) => handleInputChange('primaryGoal', e.target.value)}
-                  className="w-4 h-4 text-primary"
-                  required
-                />
-                <span className="text-sm text-foreground">{option}</span>
-              </label>
-            ))}
-          </div>
+          <label className="text-sm font-medium text-foreground mb-2 block">Apa tujuan utama marketing Anda? *</label>
+          <textarea
+            value={formData.primaryGoal}
+            onChange={(e) => handleInputChange('primaryGoal', e.target.value)}
+            className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+            rows={3}
+            placeholder="Contoh: Meningkatkan brand awareness, generate 100 leads per bulan, launch produk baru, dll."
+            required
+          />
+          <p className="text-xs text-muted-foreground mt-2">Jelaskan secara detail tujuan marketing Anda</p>
         </div>
       </div>
 
@@ -446,21 +409,21 @@ export function BrandIntakeForm() {
           Services Needed
         </h3>
         
-        <div className="grid sm:grid-cols-2 gap-3">
-          {serviceOptions.map(option => (
-            <label
-              key={option}
-              className="flex items-center gap-3 p-4 rounded-lg border border-border/50 hover:border-primary/30 cursor-pointer transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={formData.servicesNeeded.includes(option)}
-                onChange={(e) => handleCheckboxChange('servicesNeeded', option)}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm text-foreground">{option}</span>
-            </label>
-          ))}
+        <div>
+          <label className="text-sm font-medium text-foreground mb-2 block">Layanan yang Anda Butuhkan *</label>
+          <textarea
+            value={formData.servicesNeeded}
+            onChange={(e) => handleInputChange('servicesNeeded', e.target.value)}
+            className="w-full px-4 py-3 rounded-lg bg-white/5 border border-border focus:border-primary focus:outline-none text-foreground transition-colors resize-none"
+            rows={4}
+            placeholder="Contoh:
+• Social Media Management untuk Instagram & TikTok
+• Content Production (4 reels + 8 feed posts per bulan)
+• Paid Ads di Meta & Google
+• Influencer Marketing campaign"
+            required
+          />
+          <p className="text-xs text-muted-foreground mt-2">Sebutkan semua layanan yang Anda butuhkan (gunakan bullet points untuk lebih jelas)</p>
         </div>
       </div>
 
