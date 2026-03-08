@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { 
-  Search, 
-  Filter, 
-  Download, 
+import {
+  Search,
+  Filter,
+  Download,
   RefreshCw,
   ChevronUp,
   ChevronDown,
@@ -17,7 +17,8 @@ import {
   Building2,
   DollarSign,
   Calendar,
-  Tag
+  Tag,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
