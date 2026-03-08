@@ -40,7 +40,9 @@ export default function CRMClientsPage() {
             industry: lead.industry || 'Unknown',
             status: 'active' as const,
             startDate: lead.timestamp || new Date().toISOString(),
-            totalValue: parseInt(lead.budget?.replace(/[^0-9]/g, '') || '0') || 0,
+            totalValue: typeof lead.budget === 'string' 
+              ? parseInt(lead.budget.replace(/[^0-9]/g, '') || '0') || 0
+              : (lead.budget as number) || 0,
             services: lead.servicesneeded?.split(',').map((s: string) => s.trim()) || [],
             contactName: lead.fullname || lead.fullName || 'Unknown',
             email: lead.email || '',
