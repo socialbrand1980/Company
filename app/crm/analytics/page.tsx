@@ -48,13 +48,18 @@ export default function CRMAnalyticsPage() {
 
   // Process monthly revenue data
   useEffect(() => {
+    console.log('Processing leads:', leads.length)
     if (leads.length === 0) return
 
     const months: { [key: string]: MonthlyData } = {}
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     leads.forEach((lead: Lead) => {
-      if (lead.leadstatus !== 'Closed Won') return
+      console.log('Lead status:', lead.leadstatus, 'brand:', lead.brandname)
+      if (lead.leadstatus !== 'Closed Won') {
+        console.log('Skipping lead - not Closed Won')
+        return
+      }
       
       const date = new Date(lead.timestamp || Date.now())
       const year = date.getFullYear()
@@ -64,6 +69,8 @@ export default function CRMAnalyticsPage() {
       const budgetValue = typeof lead.budget === 'string' 
         ? parseInt(lead.budget.replace(/[^0-9]/g, '')) || 0
         : (lead.budget as number) || 0
+
+      console.log('Processing Closed Won lead:', monthKey, budgetValue)
 
       if (!months[monthKey]) {
         months[monthKey] = {
@@ -80,10 +87,14 @@ export default function CRMAnalyticsPage() {
       months[monthKey].clients.push(lead.brandname || 'Unknown')
     })
 
+    console.log('Months object:', months)
+
     const sortedData = Object.values(months).sort((a, b) => {
       if (a.year !== b.year) return a.year - b.year
       return monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
     })
+
+    console.log('Sorted data:', sortedData)
 
     // Filter based on timeRange
     let filteredData = sortedData
@@ -95,7 +106,7 @@ export default function CRMAnalyticsPage() {
       filteredData = sortedData.slice(-24)
     }
 
-    console.log('Monthly data:', filteredData)
+    console.log('Final monthly data:', filteredData)
     setMonthlyData(filteredData)
   }, [leads, timeRange])
 
