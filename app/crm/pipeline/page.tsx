@@ -378,7 +378,16 @@ export default function CRMPipelinePage() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DollarSign className="h-3 w-3" />
                         <span className="text-white font-medium">
-                          {lead.budget !== undefined && lead.budget !== null && lead.budget !== '' ? formatIDR(lead.budget) : "N/A"}
+                          {(() => {
+                            if (lead.budget === undefined || lead.budget === null || lead.budget === '') {
+                              return 'N/A'
+                            }
+                            // Handle both string and number
+                            const budgetValue = typeof lead.budget === 'string' 
+                              ? parseInt(lead.budget.replace(/[^0-9]/g, '')) || 0
+                              : Number(lead.budget) || 0
+                            return budgetValue > 0 ? formatIDR(lead.budget) : 'N/A'
+                          })()}
                         </span>
                       </div>
                       
@@ -443,16 +452,16 @@ export default function CRMPipelinePage() {
   )
 }
 
-function EditLeadModal({ lead, onClose, onSave, saving }: { 
-  lead: Lead, 
-  onClose: () => void, 
+function EditLeadModal({ lead, onClose, onSave, saving }: {
+  lead: Lead,
+  onClose: () => void,
   onSave: (email: string, updates: Partial<Lead>) => void,
   saving: boolean
 }) {
   const [formData, setFormData] = useState({
     brandname: lead.brandname || '',
     industry: lead.industry || '',
-    budget: lead.budget || '',
+    budget: String(lead.budget || ''),  // Convert to string
     fullname: lead.fullname || '',
     email: lead.email || '',
     phone: lead.phone || '',
