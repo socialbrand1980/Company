@@ -308,7 +308,10 @@ export default function CRMLeadsPage() {
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button size="sm" onClick={() => setShowAddLead(true)} className="gap-2 bg-blue-500 hover:bg-blue-600 text-white">
+          <Button size="sm" onClick={() => {
+            console.log('Add Lead button clicked')
+            setShowAddLead(true)
+          }} className="gap-2 bg-blue-500 hover:bg-blue-600 text-white">
             <Plus className="h-4 w-4" />
             Add Lead
           </Button>
@@ -593,16 +596,28 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
       {/* Add Lead Modal */}
       {showAddLead && (
         <AddLeadModal
-          onClose={() => setShowAddLead(false)}
+          onClose={() => {
+            console.log('Closing modal')
+            setShowAddLead(false)
+          }}
           onAdd={async (newLead) => {
-            const response = await fetch('/api/crm/leads', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newLead),
-            })
-            if (response.ok) {
-              await fetchLeads()
-              setShowAddLead(false)
+            console.log('Adding new lead:', newLead)
+            try {
+              const response = await fetch('/api/crm/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newLead),
+              })
+              console.log('Response status:', response.status)
+              if (response.ok) {
+                console.log('Lead added successfully')
+                await fetchLeads()
+                setShowAddLead(false)
+              } else {
+                console.error('Failed to add lead')
+              }
+            } catch (error) {
+              console.error('Error adding lead:', error)
             }
           }}
         />
@@ -956,6 +971,7 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted')
     setSaving(true)
     try {
       // Map form data to spreadsheet column names
@@ -981,6 +997,7 @@ function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: a
         leadstatus: 'New',
         notes: '',
       }
+      console.log('Lead data to save:', leadData)
       await onAdd(leadData)
     } catch (error) {
       console.error('Failed to add lead:', error)
