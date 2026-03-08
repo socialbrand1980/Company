@@ -164,14 +164,16 @@ export default function CRMAnalyticsPage() {
 
       if (groupByDay) {
         key = `${year}-${month}-${day}`
-        label = `${day}`
+        // Format: "8 Mar" or "8 Mar 2026" if different year
+        const monthName = monthNames[month]
+        label = year === new Date().getFullYear() ? `${day} ${monthName}` : `${day} ${monthName} ${year}`
         periodYear = year
         periodMonth = month
       } else if (groupByWeek) {
         // Calculate week number
         const weekNumber = Math.ceil(day / 7)
         key = `${year}-${month}-W${weekNumber}`
-        label = `W${weekNumber}`
+        label = `Week ${weekNumber}`
         periodYear = year
         periodMonth = month
       } else {
@@ -226,17 +228,33 @@ export default function CRMAnalyticsPage() {
     setMonthlyData(sortedData)
   }, [leads, dateRange])
 
-  // Calculate stats
+  // Calculate stats (filtered by date range)
+  const filteredLeads = leads.filter((lead: Lead) => {
+    // Only filter Closed Won leads by date for revenue metrics
+    if (lead.leadstatus !== 'Closed Won') return true
+    
+    const leadDate = new Date(lead.timestamp)
+    
+    // If no date range selected, include all
+    if (!dateRange.startDate && !dateRange.endDate) return true
+    
+    // Filter by date range
+    if (dateRange.startDate && leadDate < dateRange.startDate) return false
+    if (dateRange.endDate && leadDate > dateRange.endDate) return false
+    
+    return true
+  })
+
   const stats = {
-    totalLeads: leads.length,
-    newLeads: leads.filter((l: Lead) => l.leadstatus === 'New').length,
-    contacted: leads.filter((l: Lead) => l.leadstatus === 'Contacted').length,
-    discovery: leads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length,
-    proposal: leads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length,
-    negotiation: leads.filter((l: Lead) => l.leadstatus === 'Negotiation').length,
-    closedWon: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
-    closedLost: leads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length,
-    totalRevenue: leads
+    totalLeads: filteredLeads.length,
+    newLeads: filteredLeads.filter((l: Lead) => l.leadstatus === 'New').length,
+    contacted: filteredLeads.filter((l: Lead) => l.leadstatus === 'Contacted').length,
+    discovery: filteredLeads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length,
+    proposal: filteredLeads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length,
+    negotiation: filteredLeads.filter((l: Lead) => l.leadstatus === 'Negotiation').length,
+    closedWon: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
+    closedLost: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length,
+    totalRevenue: filteredLeads
       .filter((l: Lead) => l.leadstatus === 'Closed Won')
       .reduce((acc: number, l: Lead) => {
         const budgetValue = typeof l.budget === 'string' 
@@ -244,18 +262,18 @@ export default function CRMAnalyticsPage() {
           : (l.budget as number) || 0
         return acc + budgetValue
       }, 0),
-    conversionRate: leads.length > 0 
-      ? ((leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / leads.length) * 100).toFixed(1) 
+    conversionRate: filteredLeads.length > 0 
+      ? ((filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / filteredLeads.length) * 100).toFixed(1) 
       : "0",
-    avgDealSize: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length > 0 
-      ? leads
+    avgDealSize: filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length > 0 
+      ? filteredLeads
           .filter((l: Lead) => l.leadstatus === 'Closed Won')
           .reduce((acc: number, l: Lead) => {
             const budgetValue = typeof l.budget === 'string' 
               ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
               : (l.budget as number) || 0
             return acc + budgetValue
-          }, 0) / leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length
+          }, 0) / filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won').length
       : 0
   }
 
@@ -269,8 +287,8 @@ export default function CRMAnalyticsPage() {
     { stage: "Closed Won", count: stats.closedWon, percentage: stats.totalLeads > 0 ? (stats.closedWon / stats.totalLeads) * 100 : 0, color: "bg-green-500" }
   ]
 
-  // Industry breakdown
-  const industryBreakdown = leads.reduce((acc: any, lead: Lead) => {
+  // Industry breakdown (filtered by date range)
+  const industryBreakdown = filteredLeads.reduce((acc: any, lead: Lead) => {
     const industry = lead.industry || 'Other'
     if (!acc[industry]) acc[industry] = 0
     acc[industry]++
@@ -426,7 +444,7 @@ export default function CRMAnalyticsPage() {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                         <div className="glass-card rounded-lg p-3 min-w-[200px] shadow-xl border border-white/[0.12]">
                           <p className="text-xs font-medium text-white mb-2">
-                            {data.month} {data.year}
+                            {data.label} {data.year !== new Date().getFullYear() ? data.year : ''}
                           </p>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between gap-4">
@@ -457,7 +475,7 @@ export default function CRMAnalyticsPage() {
                           <div className="absolute -top-1 left-0 right-0 h-2 bg-green-400/30 blur-sm rounded-full" />
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground rotate-0 whitespace-nowrap">{data.month}</span>
+                      <span className="text-xs text-muted-foreground rotate-0 whitespace-nowrap">{data.label}</span>
                     </div>
                   )
                 })
@@ -466,28 +484,6 @@ export default function CRMAnalyticsPage() {
                   <p className="text-muted-foreground">No closed deals in this period</p>
                 </div>
               )}
-            </div>
-
-            {/* Stats Summary */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/[0.08]">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-lg font-bold text-green-400">
-                  {formatIDR(monthlyData.reduce((sum, d) => sum + d.value, 0))}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total Deals</p>
-                <p className="text-lg font-bold text-white">
-                  {monthlyData.reduce((sum, d) => sum + d.count, 0)}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Avg per Period</p>
-                <p className="text-lg font-bold text-blue-400">
-                  {formatIDR(monthlyData.reduce((sum, d) => sum + d.value, 0) / monthlyData.length)}
-                </p>
-              </div>
             </div>
           </div>
         </div>
