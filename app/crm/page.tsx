@@ -311,14 +311,16 @@ export default function CRMDashboard() {
           </div>
           <div className="flex items-end gap-3">
             <span className="text-4xl font-bold text-white">
-              {formatCompactIDR(
-                leads.filter(l => ["Contacted", "Discovery Call", "Proposal Sent", "Negotiation"].includes(l.leadstatus))
+              {(() => {
+                const totalValue = leads
+                  .filter(l => ["Contacted", "Discovery Call", "Proposal Sent", "Negotiation"].includes(l.leadstatus))
                   .reduce((acc, lead) => {
                     const budgetStr = String(lead.budget || '')
-                    const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 50000000
+                    const budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0
                     return acc + budget
                   }, 0)
-              )}
+                return formatIDR(totalValue)
+              })()}
             </span>
             <span className="text-sm text-muted-foreground mb-1">estimated</span>
           </div>

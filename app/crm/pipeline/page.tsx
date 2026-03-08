@@ -316,7 +316,7 @@ export default function CRMPipelinePage() {
               budget = lead.budget
             } else {
               const budgetStr = String(lead.budget || '')
-              budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 50000000
+              budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0
             }
             return acc + budget
           }, 0)
@@ -343,7 +343,7 @@ export default function CRMPipelinePage() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {formatCompactIDR(totalValue)}
+                  {formatIDR(totalValue)}
                 </p>
               </div>
 
