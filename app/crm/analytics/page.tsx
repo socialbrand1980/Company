@@ -318,7 +318,7 @@ export default function CRMAnalyticsPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">{viewMode === "daily" ? data.month : data.month}</span>
+                    <span className="text-xs text-muted-foreground">{data.month}</span>
                   </div>
                 )
               })
