@@ -1,5 +1,7 @@
 // Format number to Indonesian Rupiah (IDR)
 export function formatIDR(amount: number | string): string {
+  console.log('formatIDR called with:', amount, 'type:', typeof amount)
+  
   // Parse amount if it's a string (remove non-numeric chars except minus)
   let numericAmount: number
 
@@ -7,15 +9,20 @@ export function formatIDR(amount: number | string): string {
     // Remove all non-numeric characters except minus
     const cleaned = amount.replace(/[^0-9-]/g, '')
     numericAmount = parseInt(cleaned) || 0
+    console.log('Parsed string amount:', amount, '->', numericAmount)
   } else if (typeof amount === 'number') {
     numericAmount = amount
+    console.log('Using number amount:', numericAmount)
   } else {
     // Fallback for null/undefined/other types
+    console.log('Invalid amount type, returning N/A')
     return 'N/A'
   }
 
   // Format with thousand separator (dot) and "Rp" prefix
-  return `Rp ${numericAmount.toLocaleString('id-ID')}`
+  const result = `Rp ${numericAmount.toLocaleString('id-ID')}`
+  console.log('Formatted result:', result)
+  return result
 }
 
 // Parse budget string to number

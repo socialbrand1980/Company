@@ -338,9 +338,9 @@ export default function CRMPipelinePage() {
 
               {/* Cards */}
               <div className="p-3 space-y-3 min-h-[200px]">
-                {stageLeads.map((lead) => (
+                {stageLeads.map((lead, index) => (
                   <div
-                    key={lead.email}
+                    key={`${lead.email}-${lead.timestamp}-${index}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, lead.email)}
                     onDragEnd={handleDragEnd}
