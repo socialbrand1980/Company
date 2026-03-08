@@ -100,6 +100,7 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
 
   // Handle preset selection
   const handlePresetSelect = (preset: PresetOption) => {
+    console.log('🔘 Preset selected:', preset)
     setSelectedPreset(preset)
     
     if (preset === "custom") {
@@ -108,9 +109,15 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
     }
     
     const range = getDateRange(preset)
+    console.log('📅 Range from preset:', range)
     setStartDate(range.start)
     setEndDate(range.end)
     
+    console.log('📤 Calling onDateRangeChange:', {
+      startDate: range.start,
+      endDate: range.end,
+      label: range.label
+    })
     onDateRangeChange?.({
       startDate: range.start,
       endDate: range.end,
@@ -138,13 +145,25 @@ export function DateFilter({ onDateRangeChange }: DateFilterProps) {
 
   // Apply custom range
   const handleApply = () => {
+    console.log('🔘 Apply clicked')
+    console.log('📅 Start date:', startDate)
+    console.log('📅 End date:', endDate)
+    
     if (startDate && endDate) {
+      const label = formatDateRange(startDate, endDate)
+      console.log('📤 Calling onDateRangeChange:', {
+        startDate,
+        endDate,
+        label
+      })
       onDateRangeChange?.({
         startDate,
         endDate,
-        label: formatDateRange(startDate, endDate)
+        label
       })
       setIsOpen(false)
+    } else {
+      console.log('❌ No dates selected')
     }
   }
 

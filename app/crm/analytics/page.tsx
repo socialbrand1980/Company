@@ -57,6 +57,11 @@ export default function CRMAnalyticsPage() {
     fetchLeads()
   }, [])
 
+  // Debug: Log when dateRange changes
+  useEffect(() => {
+    console.log('🔔 DateRange changed:', dateRange)
+  }, [dateRange])
+
   // Process revenue data based on selected date range
   useEffect(() => {
     console.log('=== Analytics Filter ===')
