@@ -372,24 +372,183 @@ export default function CRMAnalyticsPage() {
     }, {})
 
   const exportData = () => {
-    // Export funnel data as CSV
-    const headers = ['Stage', 'Count', 'Percentage']
-    const rows = funnelData.map(data => [data.stage, data.count, `${data.percentage.toFixed(1)}%`])
+    console.log('📥 Exporting detailed analytics report...')
+    
+    // Get filtered leads based on current date range
+    const filteredLeads = leads.filter((lead: Lead) => {
+      let leadDate: Date
+      
+      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
+        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+        if (match) {
+          const [, year, month, day, hour, minute, second] = match
+          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+        } else {
+          leadDate = new Date(lead.timestamp)
+        }
+      } else {
+        leadDate = new Date(lead.timestamp)
+      }
+      
+      if (isNaN(leadDate.getTime())) return true
+      
+      if (!dateRange.startDate && !dateRange.endDate) return true
+      
+      if (dateRange.startDate) {
+        const start = new Date(dateRange.startDate)
+        start.setHours(0, 0, 0, 0)
+        if (leadDate < start) return false
+      }
+      if (dateRange.endDate) {
+        const end = new Date(dateRange.endDate)
+        end.setHours(23, 59, 59, 999)
+        if (leadDate > end) return false
+      }
+      
+      return true
+    })
 
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n')
+    console.log('Filtered leads for export:', filteredLeads.length)
 
+    // Generate detailed CSV with analysis
+    const dateStr = new Date().toLocaleDateString('id-ID', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    }).replace(/ /g, '-')
+    
+    const csvSections = []
+
+    // Section 1: Report Header
+    csvSections.push('SOCIALBRAND 1980 - ANALYTICS REPORT')
+    csvSections.push(`Generated: ${new Date().toLocaleString('id-ID')}`)
+    csvSections.push(`Date Range: ${dateRange.label}`)
+    csvSections.push(`Total Leads: ${filteredLeads.length}`)
+    csvSections.push('')
+
+    // Section 2: Executive Summary
+    csvSections.push('EXECUTIVE SUMMARY')
+    csvSections.push('================')
+    csvSections.push(`Total Leads: ${stats.totalLeads}`)
+    csvSections.push(`Closed Won: ${stats.closedWon}`)
+    csvSections.push(`Total Revenue: Rp ${stats.totalRevenue.toLocaleString('id-ID')}`)
+    csvSections.push(`Conversion Rate: ${stats.conversionRate}%`)
+    csvSections.push(`Average Deal Size: Rp ${Math.round(stats.avgDealSize).toLocaleString('id-ID')}`)
+    csvSections.push('')
+
+    // Section 3: Key Insights
+    csvSections.push('KEY INSIGHTS')
+    csvSections.push('============')
+    
+    // Insight 1: Top Status
+    const statusCounts = filteredLeads.reduce((acc: any, lead: Lead) => {
+      acc[lead.leadstatus] = (acc[lead.leadstatus] || 0) + 1
+      return acc
+    }, {})
+    const topStatus = Object.entries(statusCounts).sort((a, b) => b[1] - a[1])[0]
+    if (topStatus) {
+      csvSections.push(`• Most leads are in '${topStatus[0]}' stage (${topStatus[1]} leads)`)
+    }
+
+    // Insight 2: Top Industry
+    const industryCounts = filteredLeads.reduce((acc: any, lead: Lead) => {
+      const industry = lead.industry || 'Unknown'
+      acc[industry] = (acc[industry] || 0) + 1
+      return acc
+    }, {})
+    const topIndustry = Object.entries(industryCounts).sort((a, b) => b[1] - a[1])[0]
+    if (topIndustry) {
+      csvSections.push(`• Top industry: ${topIndustry[0]} (${topIndustry[1]} leads)`)
+    }
+
+    // Insight 3: Revenue Insight
+    const closedWonLeads = filteredLeads.filter((l: Lead) => l.leadstatus === 'Closed Won')
+    if (closedWonLeads.length > 0) {
+      const totalRevenue = closedWonLeads.reduce((sum: number, l: Lead) => {
+        const budget = typeof l.budget === 'string' 
+          ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+          : (l.budget as number) || 0
+        return sum + budget
+      }, 0)
+      const avgDeal = totalRevenue / closedWonLeads.length
+      csvSections.push(`• Total revenue from ${closedWonLeads.length} closed deals: Rp ${totalRevenue.toLocaleString('id-ID')}`)
+      csvSections.push(`• Average deal size: Rp ${Math.round(avgDeal).toLocaleString('id-ID')}`)
+    }
+
+    // Insight 4: Conversion Analysis
+    const conversionRate = filteredLeads.length > 0 
+      ? ((closedWonLeads.length / filteredLeads.length) * 100).toFixed(1)
+      : "0"
+    
+    if (parseFloat(conversionRate) >= 40) {
+      csvSections.push(`• Excellent conversion rate of ${conversionRate}% - above industry average!`)
+    } else if (parseFloat(conversionRate) >= 25) {
+      csvSections.push(`• Good conversion rate of ${conversionRate}% - room for improvement.`)
+    } else {
+      csvSections.push(`• Conversion rate of ${conversionRate}% - consider optimizing sales process.`)
+    }
+
+    // Insight 5: Top Client
+    if (closedWonLeads.length > 0) {
+      const topClient = closedWonLeads.reduce((max: any, l: Lead) => {
+        const budget = typeof l.budget === 'string' 
+          ? parseInt(l.budget.replace(/[^0-9]/g, '')) || 0
+          : (l.budget as number) || 0
+        const maxBudget = typeof max.budget === 'string' 
+          ? parseInt(max.budget.replace(/[^0-9]/g, '')) || 0
+          : (max.budget as number) || 0
+        return budget > maxBudget ? l : max
+      }, closedWonLeads[0])
+      
+      const topClientBudget = typeof topClient.budget === 'string' 
+        ? parseInt(topClient.budget.replace(/[^0-9]/g, '')) || 0
+        : (topClient.budget as number) || 0
+      
+      csvSections.push(`• Top client by revenue: ${topClient.brandname} (Rp ${topClientBudget.toLocaleString('id-ID')})`)
+    }
+
+    csvSections.push('')
+
+    // Section 4: Funnel Data
+    csvSections.push('SALES FUNNEL')
+    csvSections.push('============')
+    csvSections.push('Stage,Count,Percentage')
+    funnelData.forEach(item => {
+      csvSections.push(`${item.stage},${item.count},${item.percentage.toFixed(1)}%`)
+    })
+    csvSections.push('')
+
+    // Section 5: Detailed Lead Data
+    csvSections.push('DETAILED LEAD DATA')
+    csvSections.push('==================')
+    csvSections.push('Brand Name,Status,Industry,Budget,Email,Phone,Timestamp')
+    
+    filteredLeads.forEach((lead: Lead) => {
+      const budget = typeof lead.budget === 'string' 
+        ? lead.budget
+        : (lead.budget as number)?.toString() || ''
+      
+      csvSections.push(`"${lead.brandname || ''}","${lead.leadstatus || ''}","${lead.industry || ''}","${budget}","${lead.email || ''}","${lead.phone || ''}","${lead.timestamp || ''}"`)
+    })
+
+    // Join all sections
+    const csv = csvSections.join('\n')
+
+    // Download
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `crm-analytics-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
     
-    console.log('✅ CSV exported successfully')
+    const filenameDate = new Date().toISOString().split('T')[0]
+    a.download = `socialbrand1980-analytics-report-${filenameDate}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    
+    console.log('✅ Detailed CSV exported successfully')
+    alert('✅ Detailed analytics report exported! Check your downloads folder.')
   }
 
   if (loading) {
