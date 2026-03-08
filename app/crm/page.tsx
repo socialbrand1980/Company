@@ -18,54 +18,41 @@ import { formatCompactIDR } from "@/lib/format-currency"
 
 // Helper function to format timestamp - simple DD/MM/YYYY format
 function formatTimestamp(timestamp: any): string {
-  console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp, 'isDate:', timestamp instanceof Date)
-  
-  if (!timestamp) {
-    console.log('No timestamp, returning N/A')
-    return 'N/A'
-  }
+  if (!timestamp) return 'N/A'
   
   try {
     let date: Date
     
     // If it's already a Date object (from Google Sheets)
     if (timestamp instanceof Date) {
-      console.log('Using Date object directly')
       date = timestamp
     }
     // If it's a string that looks like "Date(2026,2,8,8,39,19)"
     else if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
-      console.log('Parsing Google Sheets Date string')
       // Extract: year, month, day, hour, minute, second
       const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
       if (match) {
         const [, year, month, day, hour, minute, second] = match
         // Month is 0-indexed in JS, but Google Sheets uses 1-indexed
         date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second))
-        console.log('Parsed Google Sheets date:', date)
       } else {
         date = new Date(timestamp)
       }
     }
     // If it's a number (Unix timestamp)
     else if (typeof timestamp === 'number') {
-      console.log('Parsing as number')
       date = new Date(timestamp)
     }
     // If it's a regular string
     else {
-      console.log('Parsing as string')
       const dateStr = String(timestamp)
-      console.log('Date string:', dateStr)
       
       // Handle ISO format (from API submissions) - CHECK FIRST
       if (dateStr.includes('T') && dateStr.includes('Z')) {
-        console.log('Detected ISO format with Z')
         date = new Date(dateStr)
       }
       // Handle ISO format without Z
       else if (dateStr.includes('T')) {
-        console.log('Detected ISO format')
         date = new Date(dateStr)
       }
       // Handle Google Sheets format: DD/MM/YYYY HH:MM:SS
@@ -73,18 +60,16 @@ function formatTimestamp(timestamp: any): string {
         const parts = dateStr.split(' ')
         const datePart = parts[0] // DD/MM/YYYY
         const [day, month, year] = datePart.split('/')
-        console.log('Google Sheets date parts:', { day, month, year })
         // Create date with explicit month (1-indexed in Google Sheets)
         // Use UTC to avoid timezone issues
         date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
-        console.log('Created UTC date:', date, 'month:', date.getUTCMonth())
       }
       // Handle DD/MM/YYYY
       else if (dateStr.includes('/')) {
         const parts = dateStr.split('/')
         if (parts.length === 3) {
           const [day, month, year] = parts
-          date = new Date(`${year}-${month}-${day}`)
+          date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
         } else {
           date = new Date(dateStr)
         }
@@ -108,10 +93,7 @@ function formatTimestamp(timestamp: any): string {
       }
     }
     
-    console.log('Parsed date:', date, 'isValid:', !isNaN(date.getTime()))
-    
     if (isNaN(date.getTime())) {
-      console.log('Invalid date, returning N/A')
       return 'N/A'
     }
     
@@ -119,12 +101,9 @@ function formatTimestamp(timestamp: any): string {
     const day = String(date.getUTCDate()).padStart(2, '0')
     const month = String(date.getUTCMonth() + 1).padStart(2, '0')  // +1 because getMonth() is 0-indexed
     const year = date.getUTCFullYear()
-    const result = `${day}/${month}/${year}`
     
-    console.log('Formatted result:', result, 'from date:', date)
-    return result
-  } catch (e) {
-    console.log('Error in formatTimestamp:', e)
+    return `${day}/${month}/${year}`
+  } catch {
     return 'N/A'
   }
 }
