@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('=== FORM DATA TO GOOGLE SHEETS ===')
+    console.log('Timestamp:', formData['Timestamp'])
     console.log('Primary Goal:', formData['Primary Goal'])
     console.log('Services Needed:', formData['Services Needed'])
     console.log('Full payload:', JSON.stringify(formData, null, 2))

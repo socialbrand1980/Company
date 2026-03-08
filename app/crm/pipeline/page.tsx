@@ -312,11 +312,28 @@ export default function CRMPipelinePage() {
                               let dateStr = String(lead.timestamp)
                               let date: Date
                               
-                              if (typeof lead.timestamp === 'number') {
-                                date = new Date(lead.timestamp)
-                              } else if (dateStr.includes('T')) {
+                              console.log('Pipeline timestamp:', lead.timestamp, 'type:', typeof lead.timestamp)
+                              
+                              // Check if it's a Unix timestamp (number or numeric string)
+                              if (typeof lead.timestamp === 'number' || /^\d+$/.test(dateStr)) {
+                                const timestamp = Number(lead.timestamp)
+                                // If timestamp is in seconds (10 digits), convert to milliseconds
+                                if (timestamp < 10000000000) {
+                                  date = new Date(timestamp * 1000)
+                                } else {
+                                  date = new Date(timestamp)
+                                }
+                              }
+                              // ISO format or standard date string
+                              else if (dateStr.includes('T') || dateStr.includes('-')) {
                                 date = new Date(dateStr)
-                              } else {
+                              }
+                              // Google Sheets might return formatted date like "2025-03-08 10:30:00"
+                              else if (dateStr.includes(' ')) {
+                                date = new Date(dateStr.replace(' ', 'T'))
+                              }
+                              // Try direct parse as last resort
+                              else {
                                 date = new Date(dateStr)
                               }
                               

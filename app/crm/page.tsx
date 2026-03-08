@@ -310,27 +310,37 @@ export default function CRMDashboard() {
                       {(() => {
                         if (!lead.timestamp) return 'N/A'
                         try {
-                          // Handle different timestamp formats
                           let dateStr = String(lead.timestamp)
-                          
-                          // Try to parse ISO format or Unix timestamp
                           let date: Date
                           
-                          // Check if it's a Unix timestamp (number)
-                          if (typeof lead.timestamp === 'number') {
-                            date = new Date(lead.timestamp)
-                          } 
-                          // Check if it's ISO string
-                          else if (dateStr.includes('T')) {
+                          console.log('Raw timestamp:', lead.timestamp, 'type:', typeof lead.timestamp)
+                          
+                          // Check if it's a Unix timestamp (number or numeric string)
+                          if (typeof lead.timestamp === 'number' || /^\d+$/.test(dateStr)) {
+                            const timestamp = Number(lead.timestamp)
+                            // If timestamp is in seconds (10 digits), convert to milliseconds
+                            if (timestamp < 10000000000) {
+                              date = new Date(timestamp * 1000)
+                            } else {
+                              date = new Date(timestamp)
+                            }
+                          }
+                          // ISO format or standard date string
+                          else if (dateStr.includes('T') || dateStr.includes('-')) {
                             date = new Date(dateStr)
                           }
-                          // Try direct parse
+                          // Google Sheets might return formatted date like "2025-03-08 10:30:00"
+                          else if (dateStr.includes(' ')) {
+                            // Replace space with T for ISO format
+                            date = new Date(dateStr.replace(' ', 'T'))
+                          }
+                          // Try direct parse as last resort
                           else {
                             date = new Date(dateStr)
                           }
                           
                           if (isNaN(date.getTime())) {
-                            console.log('Invalid date:', lead.timestamp)
+                            console.log('Invalid date after parsing:', lead.timestamp)
                             return 'N/A'
                           }
                           
