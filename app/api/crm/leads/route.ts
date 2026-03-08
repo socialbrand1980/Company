@@ -19,62 +19,122 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch data from Google Sheets via published CSV endpoint
-    // This works without API credentials for public sheets
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`
+    // Method 1: Try Google Sheets API with credentials if available
+    if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+      try {
+        const { google } = await import('googleapis')
+        
+        const auth = new google.auth.GoogleAuth({
+          credentials: {
+            client_email: process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          },
+          scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+        })
 
-    const response = await fetch(csvUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
-    })
+        const sheets = google.sheets({ version: 'v4', auth })
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch from Google Sheets')
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'Sheet1!A2:U1000',
+        })
+
+        const rows = response.data.values || []
+        
+        const leads = rows.map(row => ({
+          timestamp: row[0] || '',
+          brandname: row[1] || '',
+          website: row[2] || '',
+          industry: row[3] || '',
+          targetmarket: row[4] || '',
+          yearfounded: row[5] || '',
+          teamsize: row[6] || '',
+          primarygoal: row[7] || '',
+          runads: row[8] || '',
+          channels: row[9] || '',
+          budget: row[10] || '',
+          targetaudience: row[11] || '',
+          competitors: row[12] || '',
+          timeline: row[13] || '',
+          servicesneeded: row[14] || '',
+          fullname: row[15] || '',
+          email: row[16] || '',
+          phone: row[17] || '',
+          role: row[18] || '',
+          leadstatus: row[19] || 'New',
+          notes: row[20] || '',
+        }))
+
+        return NextResponse.json({
+          success: true,
+          leads,
+          count: leads.length
+        })
+      } catch (apiError) {
+        console.error('Google Sheets API error:', apiError)
+        // Continue to fallback method
+      }
     }
 
-    const text = await response.text()
-    
-    // Parse the JSON response (Google wraps it in a function call)
-    const jsonText = text.substring(47).slice(0, -2)
-    const json = JSON.parse(jsonText)
+    // Method 2: Try gviz endpoint (public sheet)
+    try {
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`
 
-    // Convert to array of objects
-    const cols = json.table.cols.map((col: any) => col.label || '')
-    const rows = json.table.rows || []
-
-    const leads = rows.map((row: any) => {
-      const lead: any = {}
-      cols.forEach((col: string, index: number) => {
-        const cell = row.c[index]
-        const key = col.toLowerCase().replace(/\s+/g, '')
-        lead[key] = cell?.v || cell?.f || ''
+      const response = await fetch(csvUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+        cache: 'no-store',
       })
-      return lead
-    })
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const text = await response.text()
+      
+      // Parse the JSON response (Google wraps it in a function call)
+      const jsonText = text.substring(text.indexOf('{')).slice(0, -2)
+      const json = JSON.parse(jsonText)
+
+      const cols = json.table.cols.map((col: any) => col.label || col.id || '')
+      const rows = json.table.rows || []
+
+      const leads = rows.map((row: any) => {
+        const lead: any = {}
+        cols.forEach((col: string, index: number) => {
+          const cell = row.c[index]
+          const key = col.toLowerCase().replace(/\s+/g, '')
+          lead[key] = cell?.v || cell?.f || ''
+        })
+        return lead
+      })
+
+      return NextResponse.json({
+        success: true,
+        leads,
+        count: leads.length
+      })
+    } catch (gvizError) {
+      console.error('gviz error:', gvizError)
+    }
+
+    // Method 3: Return empty with helpful message
     return NextResponse.json({
       success: true,
-      leads,
-      count: leads.length
+      leads: [],
+      count: 0,
+      message: 'No data found. Make sure the Google Sheet is shared publicly ("Anyone with link can view") or configure Google Sheets API credentials in environment variables.'
     })
 
   } catch (error) {
     console.error('Google Sheets Fetch Error:', error)
 
-    // Return error with more details in development
-    if (process.env.NODE_ENV === 'development') {
-      return NextResponse.json({
-        success: false,
-        leads: [],
-        count: 0,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        message: 'Make sure the Google Sheet is shared publicly or configure Google Sheets API credentials'
-      })
-    }
-
     return NextResponse.json(
-      { error: 'Failed to fetch leads' },
+      { 
+        error: 'Failed to fetch leads',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -82,7 +142,6 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    // Check if running in development/local
     const host = request.headers.get('host') || ''
     const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
 
@@ -116,8 +175,10 @@ export async function PATCH(request: NextRequest) {
       }),
     })
 
+    const result = await webhookResponse.json()
+
     if (!webhookResponse.ok) {
-      throw new Error('Failed to update Google Sheet')
+      throw new Error(result.error || 'Failed to update Google Sheet')
     }
 
     return NextResponse.json({

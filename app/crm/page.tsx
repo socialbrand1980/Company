@@ -57,8 +57,10 @@ export default function CRMDashboard() {
     try {
       const response = await fetch('/api/crm/leads')
       const data = await response.json()
+      console.log('CRM API Response:', data)
       if (data.success) {
         setLeads(data.leads || [])
+        console.log('Leads loaded:', data.leads?.length || 0)
       }
     } catch (error) {
       console.error('Failed to fetch leads:', error)
