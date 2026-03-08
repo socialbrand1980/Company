@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, Calendar, Funnel, PieChart, Activity } from "lucide-react"
+import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, Calendar, PieChart, Activity, ChartBar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
 
@@ -226,7 +226,7 @@ export default function CRMAnalyticsPage() {
         <div className="glass-card p-6 rounded-xl mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Funnel className="h-6 w-6 text-blue-400" />
+              <ChartBar className="h-6 w-6 text-blue-400" />
               <div>
                 <h3 className="text-lg font-semibold text-white">Sales Funnel</h3>
                 <p className="text-sm text-muted-foreground mt-1">Lead progression through pipeline</p>
