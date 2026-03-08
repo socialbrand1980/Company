@@ -16,6 +16,54 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { formatCompactIDR } from "@/lib/format-currency"
 
+// Helper function to format timestamp
+function formatTimestamp(timestamp: any): string {
+  if (!timestamp) return 'N/A'
+  
+  try {
+    console.log('Raw timestamp:', timestamp, 'type:', typeof timestamp)
+    let dateStr = String(timestamp)
+    let date: Date
+    
+    // Check if it's a Unix timestamp (number or numeric string)
+    if (typeof timestamp === 'number' || /^\d+$/.test(dateStr)) {
+      const ts = Number(timestamp)
+      // If timestamp is in seconds (10 digits), convert to milliseconds
+      if (ts < 10000000000) {
+        date = new Date(ts * 1000)
+      } else {
+        date = new Date(ts)
+      }
+    }
+    // ISO format or standard date string
+    else if (dateStr.includes('T') || dateStr.includes('-')) {
+      date = new Date(dateStr)
+    }
+    // Google Sheets might return formatted date like "2025-03-08 10:30:00"
+    else if (dateStr.includes(' ')) {
+      date = new Date(dateStr.replace(' ', 'T'))
+    }
+    // Try direct parse as last resort
+    else {
+      date = new Date(dateStr)
+    }
+    
+    if (isNaN(date.getTime())) {
+      console.log('Invalid date after parsing:', timestamp)
+      return 'N/A'
+    }
+    
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  } catch (e) {
+    console.log('Date parse error:', e, timestamp)
+    return 'N/A'
+  }
+}
+
 interface Lead {
   timestamp: string
   brandname: string
@@ -307,53 +355,7 @@ export default function CRMDashboard() {
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-muted-foreground">
-                      {(() => {
-                        if (!lead.timestamp) return 'N/A'
-                        try {
-                          let dateStr = String(lead.timestamp)
-                          let date: Date
-                          
-                          console.log('Raw timestamp:', lead.timestamp, 'type:', typeof lead.timestamp)
-                          
-                          // Check if it's a Unix timestamp (number or numeric string)
-                          if (typeof lead.timestamp === 'number' || /^\d+$/.test(dateStr)) {
-                            const timestamp = Number(lead.timestamp)
-                            // If timestamp is in seconds (10 digits), convert to milliseconds
-                            if (timestamp < 10000000000) {
-                              date = new Date(timestamp * 1000)
-                            } else {
-                              date = new Date(timestamp)
-                            }
-                          }
-                          // ISO format or standard date string
-                          else if (dateStr.includes('T') || dateStr.includes('-')) {
-                            date = new Date(dateStr)
-                          }
-                          // Google Sheets might return formatted date like "2025-03-08 10:30:00"
-                          else if (dateStr.includes(' ')) {
-                            // Replace space with T for ISO format
-                            date = new Date(dateStr.replace(' ', 'T'))
-                          }
-                          // Try direct parse as last resort
-                          else {
-                            date = new Date(dateStr)
-                          }
-                          
-                          if (isNaN(date.getTime())) {
-                            console.log('Invalid date after parsing:', lead.timestamp)
-                            return 'N/A'
-                          }
-                          
-                          return date.toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })
-                        } catch (e) {
-                          console.log('Date parse error:', e, lead.timestamp)
-                          return 'N/A'
-                        }
-                      })()}
+                      {formatTimestamp(lead.timestamp)}
                     </span>
                   </td>
                 </tr>
