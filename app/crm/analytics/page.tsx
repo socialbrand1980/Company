@@ -1,11 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, PieChart, Activity, ChartBar, LogOut } from "lucide-react"
+import { TrendingUp, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, BarChart3, Download, PieChart, Activity, ChartBar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
 import { DateFilter } from "@/components/date-filter"
-import { useRouter } from "next/navigation"
 
 interface Lead {
   leadstatus: string
@@ -34,7 +33,6 @@ interface MonthlyData {
 }
 
 export default function CRMAnalyticsPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
   const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null; label: string }>({
@@ -43,16 +41,6 @@ export default function CRMAnalyticsPage() {
     label: "Last 7 days"
   })
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/login', { method: 'DELETE' })
-      router.push('/crm/login')
-      router.refresh()
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
 
   useEffect(() => {
     async function fetchLeads() {
@@ -619,11 +607,6 @@ export default function CRMAnalyticsPage() {
             <Button variant="outline" size="sm" onClick={exportData} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
               <Download className="h-4 w-4" />
               Export
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2 bg-red-500/[0.1] border-red-500/20 hover:bg-red-500/20 text-red-400">
-              <LogOut className="h-4 w-4" />
-              Logout
             </Button>
           </div>
         </div>
