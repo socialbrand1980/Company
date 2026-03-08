@@ -276,7 +276,7 @@ export function BrandIntakeForm() {
         </h3>
         
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Apa tujuan utama marketing Anda? *</label>
+          <label className="text-sm font-medium text-foreground mb-2 block">Apa ekspetasi yang Anda harapkan? *</label>
           <textarea
             value={formData.primaryGoal}
             onChange={(e) => handleInputChange('primaryGoal', e.target.value)}

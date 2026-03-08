@@ -161,6 +161,7 @@ export default function CRMLeadsPage() {
   const [showStatusDropdown, setShowStatusDropdown] = useState<string | null>(null)
   const [updatingEmail, setUpdatingEmail] = useState<string | null>(null)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [showAddLead, setShowAddLead] = useState(false)
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -305,6 +306,10 @@ export default function CRMLeadsPage() {
           <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
             <Download className="h-4 w-4" />
             Export
+          </Button>
+          <Button size="sm" onClick={() => setShowAddLead(true)} className="gap-2 bg-blue-500 hover:bg-blue-600 text-white">
+            <Plus className="h-4 w-4" />
+            Add Lead
           </Button>
         </div>
       </div>
@@ -581,6 +586,24 @@ ${lead.email ? `\n\nSent from: ${lead.email}` : ''}`)
           onClose={() => setEditingLead(null)}
           onSave={updateLead}
           saving={updatingEmail === editingLead.email}
+        />
+      )}
+
+      {/* Add Lead Modal */}
+      {showAddLead && (
+        <AddLeadModal
+          onClose={() => setShowAddLead(false)}
+          onAdd={async (newLead) => {
+            const response = await fetch('/api/crm/leads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newLead),
+            })
+            if (response.ok) {
+              await fetchLeads()
+              setShowAddLead(false)
+            }
+          }}
         />
       )}
     </div>
@@ -902,6 +925,230 @@ function DetailRow({ icon: Icon, label, value, isLink }: { icon: any, label: str
       ) : (
         <p className="text-sm text-white">{value}</p>
       )}
+    </div>
+  )
+}
+
+// Add Lead Modal
+function AddLeadModal({ onClose, onAdd }: { onClose: () => void, onAdd: (lead: any) => Promise<void> }) {
+  const [formData, setFormData] = useState({
+    brandname: '',
+    website: '',
+    industry: '',
+    targetmarket: '',
+    primarygoal: '',
+    budget: '',
+    timeline: '',
+    servicesneeded: '',
+    fullname: '',
+    email: '',
+    phone: '',
+    role: '',
+    leadstatus: 'New',
+    notes: '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await onAdd(formData)
+    } catch (error) {
+      console.error('Failed to add lead:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-4xl glass-card rounded-xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.05] sticky top-0 bg-[#0a0a0f]">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Add New Lead</h2>
+            <p className="text-sm text-muted-foreground mt-1">Manually add a lead to your pipeline</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Brand Information */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Brand Name *</label>
+              <input
+                type="text"
+                value={formData.brandname}
+                onChange={(e) => setFormData({...formData, brandname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Industry *</label>
+              <input
+                type="text"
+                value={formData.industry}
+                onChange={(e) => setFormData({...formData, industry: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Website</label>
+              <input
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData({...formData, website: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Target Market</label>
+              <input
+                type="text"
+                value={formData.targetmarket}
+                onChange={(e) => setFormData({...formData, targetmarket: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+
+            {/* Contact Information */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Full Name *</label>
+              <input
+                type="text"
+                value={formData.fullname}
+                onChange={(e) => setFormData({...formData, fullname: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Email *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Phone</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Role</label>
+              <input
+                type="text"
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+
+            {/* Business Information */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Budget</label>
+              <input
+                type="text"
+                value={formData.budget}
+                onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Timeline</label>
+              <select
+                value={formData.timeline}
+                onChange={(e) => setFormData({...formData, timeline: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                <option value="">Select timeline</option>
+                <option value="Immediately">Immediately</option>
+                <option value="Within 1 month">Within 1 month</option>
+                <option value="1-3 months">1-3 months</option>
+                <option value="Just exploring">Just exploring</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Primary Goal</label>
+              <textarea
+                value={formData.primarygoal}
+                onChange={(e) => setFormData({...formData, primarygoal: e.target.value})}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Services Needed</label>
+              <textarea
+                value={formData.servicesneeded}
+                onChange={(e) => setFormData({...formData, servicesneeded: e.target.value})}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm resize-none"
+                placeholder="Comma separated (e.g., Social Media Management, Content Production)"
+              />
+            </div>
+
+            {/* Status & Notes */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Status</label>
+              <select
+                value={formData.leadstatus}
+                onChange={(e) => setFormData({...formData, leadstatus: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              >
+                <option value="New">New</option>
+                <option value="Contacted">Contacted</option>
+                <option value="Discovery Call">Discovery Call</option>
+                <option value="Proposal Sent">Proposal Sent</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Closed Won">Closed Won</option>
+                <option value="Closed Lost">Closed Lost</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Notes</label>
+              <input
+                type="text"
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.05]">
+            <Button type="button" variant="outline" onClick={onClose} className="bg-white/[0.03] border-white/[0.08]">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white">
+              {saving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Lead
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
