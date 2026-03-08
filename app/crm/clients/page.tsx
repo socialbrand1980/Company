@@ -4,8 +4,6 @@ import React, { useState, useEffect } from "react"
 import { Search, Building2, Mail, Phone, TrendingUp, DollarSign, Calendar, Users, Briefcase, Filter, Download, RefreshCw, Eye, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
 
 interface Client {
   id: string
@@ -30,41 +28,42 @@ export default function CRMClientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
 
-  // Mock data - later can fetch from API
+  // Fetch clients from CRM API (convert won leads to clients)
   useEffect(() => {
-    // Simulate fetching clients
-    const mockClients: Client[] = [
-      {
-        id: "1",
-        brandName: "Noa",
-        industry: "Fashion",
-        status: "active",
-        startDate: "2026-03-08",
-        totalValue: 50000000,
-        services: ["Social Media Management", "Content Production"],
-        contactName: "John Doe",
-        email: "john@noa.com",
-        phone: "08123456789",
-        teamSize: "6-20",
-        notes: "Active client since March 2026"
-      },
-      {
-        id: "2",
-        brandName: "Trueve",
-        industry: "Beauty & Skincare",
-        status: "active",
-        startDate: "2026-02-15",
-        totalValue: 150000000,
-        services: ["Brand Strategy", "Performance Marketing", "Influencer Marketing"],
-        contactName: "Jane Smith",
-        email: "jane@trueve.com",
-        phone: "08123456788",
-        teamSize: "21-50",
-        notes: "Premium client with full service package"
+    async function fetchClients() {
+      try {
+        const response = await fetch('/api/crm/leads')
+        const data = await response.json()
+        if (data.success) {
+          // Convert won leads to clients
+          const wonLeads = data.leads.filter((lead: any) => 
+            lead.leadstatus === 'Closed Won'
+          )
+          
+          const clientsData: Client[] = wonLeads.map((lead: any, index: number) => ({
+            id: lead.email || `client-${index}`,
+            brandName: lead.brandname || lead.brandName || 'Unknown',
+            industry: lead.industry || 'Unknown',
+            status: 'active' as const,
+            startDate: lead.timestamp || new Date().toISOString(),
+            totalValue: parseInt(lead.budget?.replace(/[^0-9]/g, '') || '0') || 0,
+            services: lead.servicesneeded?.split(',').map((s: string) => s.trim()) || [],
+            contactName: lead.fullname || lead.fullName || 'Unknown',
+            email: lead.email || '',
+            phone: lead.phone || '',
+            teamSize: lead.teamsize || lead.teamSize || '',
+            notes: lead.notes || ''
+          }))
+          
+          setClients(clientsData)
+        }
+      } catch (error) {
+        console.error('Failed to fetch clients:', error)
+      } finally {
+        setLoading(false)
       }
-    ]
-    setClients(mockClients)
-    setLoading(false)
+    }
+    fetchClients()
   }, [])
 
   const filteredClients = clients.filter(client => {
@@ -97,10 +96,8 @@ export default function CRMClientsPage() {
   }
 
   return (
-    <>
-      <Navigation />
-      <main className="min-h-screen pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -275,10 +272,10 @@ export default function CRMClientsPage() {
               </div>
             )}
           </div>
+          </div>
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </div>
   )
 }
 

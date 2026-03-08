@@ -3,33 +3,58 @@
 import React, { useState, useEffect } from "react"
 import { TrendingUp, Users, DollarSign, Target, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, PieChart, Activity } from "lucide-react"
 import { formatIDR } from "@/lib/format-currency"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
+
+interface Lead {
+  leadstatus: string
+  budget: string
+  timestamp: string
+}
 
 export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d")
+  const [leads, setLeads] = useState<Lead[]>([])
 
-  // Mock data
+  // Fetch leads from CRM API
+  useEffect(() => {
+    async function fetchLeads() {
+      try {
+        const response = await fetch('/api/crm/leads')
+        const data = await response.json()
+        if (data.success) {
+          setLeads(data.leads || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch leads:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchLeads()
+  }, [])
+
+  // Calculate stats from real data
   const stats = {
-    totalLeads: 47,
-    leadsGrowth: 12.5,
-    activeClients: 12,
+    totalLeads: leads.length,
+    leadsGrowth: 12.5, // Would calculate from historical data
+    activeClients: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length,
     clientsGrowth: 8.3,
-    totalRevenue: 2450000000,
+    totalRevenue: leads
+      .filter((l: Lead) => l.leadstatus === 'Closed Won')
+      .reduce((acc: number, l: Lead) => acc + (parseInt(l.budget?.replace(/[^0-9]/g, '') || '0')), 0),
     revenueGrowth: 23.7,
-    conversionRate: 25.5,
+    conversionRate: leads.length > 0 ? ((leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length / leads.length) * 100).toFixed(1) : 0,
     conversionGrowth: 5.2
   }
 
   const leadsByStatus = [
-    { status: "New", count: 15, color: "bg-blue-500" },
-    { status: "Contacted", count: 12, color: "bg-yellow-500" },
-    { status: "Discovery Call", count: 8, color: "bg-purple-500" },
-    { status: "Proposal Sent", count: 6, color: "bg-orange-500" },
-    { status: "Negotiation", count: 4, color: "bg-pink-500" },
-    { status: "Closed Won", count: 12, color: "bg-green-500" },
-    { status: "Closed Lost", count: 3, color: "bg-red-500" }
+    { status: "New", count: leads.filter((l: Lead) => l.leadstatus === 'New').length, color: "bg-blue-500" },
+    { status: "Contacted", count: leads.filter((l: Lead) => l.leadstatus === 'Contacted').length, color: "bg-yellow-500" },
+    { status: "Discovery Call", count: leads.filter((l: Lead) => l.leadstatus === 'Discovery Call').length, color: "bg-purple-500" },
+    { status: "Proposal Sent", count: leads.filter((l: Lead) => l.leadstatus === 'Proposal Sent').length, color: "bg-orange-500" },
+    { status: "Negotiation", count: leads.filter((l: Lead) => l.leadstatus === 'Negotiation').length, color: "bg-pink-500" },
+    { status: "Closed Won", count: leads.filter((l: Lead) => l.leadstatus === 'Closed Won').length, color: "bg-green-500" },
+    { status: "Closed Lost", count: leads.filter((l: Lead) => l.leadstatus === 'Closed Lost').length, color: "bg-red-500" }
   ]
 
   const revenueByMonth = [
@@ -65,10 +90,8 @@ export default function CRMAnalyticsPage() {
   }
 
   return (
-    <>
-      <Navigation />
-      <main className="min-h-screen pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -249,10 +272,10 @@ export default function CRMAnalyticsPage() {
               </div>
             </div>
           </div>
+          </div>
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </div>
   )
 }
 
