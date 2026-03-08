@@ -1,0 +1,447 @@
+"use client"
+
+import React, { useState, useEffect, useCallback } from "react"
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
+  MoreHorizontal,
+  Eye,
+  Edit2,
+  Trash2,
+  Mail,
+  Phone,
+  Building2,
+  DollarSign,
+  Calendar,
+  Tag
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+interface Lead {
+  timestamp: string
+  brandname: string
+  website: string
+  industry: string
+  targetmarket: string
+  yearfounded: string
+  teamsize: string
+  primarygoal: string
+  runads: string
+  channels: string
+  budget: string
+  targetaudience: string
+  competitors: string
+  timeline: string
+  servicesneeded: string
+  fullname: string
+  email: string
+  phone: string
+  role: string
+  leadstatus: string
+  notes: string
+}
+
+const statusColors: Record<string, string> = {
+  "New": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  "Contacted": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  "Discovery Call": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  "Proposal Sent": "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  "Negotiation": "bg-pink-500/10 text-pink-400 border-pink-500/20",
+  "Closed Won": "bg-green-500/10 text-green-400 border-green-500/20",
+  "Closed Lost": "bg-red-500/10 text-red-400 border-red-500/20",
+}
+
+const statusOptions = [
+  "New",
+  "Contacted",
+  "Discovery Call",
+  "Proposal Sent",
+  "Negotiation",
+  "Closed Won",
+  "Closed Lost"
+]
+
+export default function CRMLeadsPage() {
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [sortField, setSortField] = useState<keyof Lead>("timestamp")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [showStatusDropdown, setShowStatusDropdown] = useState<string | null>(null)
+
+  const fetchLeads = useCallback(async () => {
+    try {
+      const response = await fetch('/api/crm/leads')
+      const data = await response.json()
+      if (data.success) {
+        setLeads(data.leads || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch leads:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchLeads()
+    const interval = setInterval(fetchLeads, 30000)
+    return () => clearInterval(interval)
+  }, [fetchLeads])
+
+  const handleSort = (field: keyof Lead) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("desc")
+    }
+  }
+
+  const filteredLeads = leads
+    .filter(lead => {
+      const matchesSearch = 
+        lead.brandname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.fullname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesStatus = statusFilter === "all" || lead.leadstatus === statusFilter
+      
+      return matchesSearch && matchesStatus
+    })
+    .sort((a, b) => {
+      const aVal = a[sortField]?.toLowerCase() || ""
+      const bVal = b[sortField]?.toLowerCase() || ""
+      if (sortDirection === "asc") {
+        return aVal.localeCompare(bVal)
+      } else {
+        return bVal.localeCompare(aVal)
+      }
+    })
+
+  const exportToCSV = () => {
+    const headers = ["Timestamp", "Brand", "Email", "Phone", "Industry", "Budget", "Status", "Services"]
+    const csv = [
+      headers.join(","),
+      ...filteredLeads.map(lead => [
+        lead.timestamp,
+        lead.brandname,
+        lead.email,
+        lead.phone,
+        lead.industry,
+        lead.budget,
+        lead.leadstatus,
+        lead.servicesneeded?.replace(/,/g, ";") || ""
+      ].join(","))
+    ].join("\n")
+
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `leads-${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage and track all your leads</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={fetchLeads} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2 bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by brand, email, name, or industry..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-foreground text-sm transition-colors"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-foreground text-sm min-w-[200px]"
+          >
+            <option value="all">All Status</option>
+            {statusOptions.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="glass-card rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/[0.05] bg-white/[0.02]">
+                <TableHeader label="Brand" field="brandname" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Contact" field="fullname" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Industry" field="industry" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Budget" field="budget" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Services" />
+                <TableHeader label="Timeline" field="timeline" sort={handleSort} currentSort={sortField} />
+                <TableHeader label="Status" field="leadstatus" sort={handleSort} currentSort={sortField} />
+                <th className="p-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLeads.map((lead, index) => (
+                <tr 
+                  key={index} 
+                  className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                >
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/[0.08] flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{lead.brandname || "N/A"}</p>
+                        {lead.website && (
+                          <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                            {lead.website.replace(/^https?:\/\//, '')}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-white">{lead.fullname}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3" />
+                        {lead.email}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3" />
+                        {lead.phone}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-white">{lead.industry}</p>
+                      <p className="text-xs text-muted-foreground">{lead.targetmarket}</p>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-white font-medium">{lead.budget || "N/A"}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-1 max-w-[250px]">
+                      {lead.servicesneeded?.split(",").slice(0, 2).map((service: string, i: number) => (
+                        <span key={i} className="text-xs px-2 py-1 rounded bg-white/[0.05] text-muted-foreground truncate">
+                          {service.trim()}
+                        </span>
+                      ))}
+                      {lead.servicesneeded?.split(",").length > 2 && (
+                        <span className="text-xs px-2 py-1 rounded bg-white/[0.05] text-muted-foreground">
+                          +{lead.servicesneeded.split(",").length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-white">{lead.timeline || "N/A"}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowStatusDropdown(showStatusDropdown === lead.email ? null : lead.email)}
+                        className={`text-xs px-3 py-1.5 rounded-full border ${statusColors[lead.leadstatus] || statusColors["New"]} flex items-center gap-2 hover:opacity-80 transition-opacity`}
+                      >
+                        {lead.leadstatus || "New"}
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      
+                      {showStatusDropdown === lead.email && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowStatusDropdown(null)} />
+                          <div className="absolute top-full left-0 mt-1 w-48 rounded-lg bg-[#0d0d12] border border-white/[0.08] shadow-xl z-20 overflow-hidden">
+                            {statusOptions.map(status => (
+                              <button
+                                key={status}
+                                onClick={() => {
+                                  // Update status logic here
+                                  setShowStatusDropdown(null)
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/[0.05] transition-colors ${
+                                  lead.leadstatus === status ? 'text-blue-400 bg-blue-500/10' : 'text-foreground'
+                                }`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <button className="p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors">
+                        <Trash2 className="h-4 w-4 text-red-400" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {filteredLeads.length === 0 && (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">No leads found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Lead Detail Panel */}
+      {selectedLead && (
+        <LeadDetailPanel 
+          lead={selectedLead} 
+          onClose={() => setSelectedLead(null)} 
+        />
+      )}
+    </div>
+  )
+}
+
+function TableHeader({ label, field, sort, currentSort }: any) {
+  return (
+    <th 
+      className={`p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${field ? 'cursor-pointer hover:text-white transition-colors' : ''}`}
+      onClick={() => field && sort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {field && currentSort === field && (
+          <ChevronUp className="h-3 w-3" />
+        )}
+      </div>
+    </th>
+  )
+}
+
+function LeadDetailPanel({ lead, onClose }: { lead: Lead, onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md glass-card overflow-y-auto animate-in slide-in-from-right duration-300">
+        <div className="sticky top-0 flex items-center justify-between p-6 border-b border-white/[0.05] bg-[#0a0a0f]">
+          <h2 className="text-xl font-bold text-white">Lead Details</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* Brand Info */}
+          <section>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Brand Information</h3>
+            <div className="space-y-3">
+              <InfoRow icon={Building2} label="Brand Name" value={lead.brandname} />
+              {lead.website && <InfoRow icon={Tag} label="Website" value={lead.website} isLink />}
+              <InfoRow icon={Tag} label="Industry" value={lead.industry} />
+              <InfoRow icon={Tag} label="Target Market" value={lead.targetmarket} />
+            </div>
+          </section>
+
+          {/* Contact Info */}
+          <section>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contact Information</h3>
+            <div className="space-y-3">
+              <InfoRow icon={Tag} label="Name" value={lead.fullname} />
+              <InfoRow icon={Tag} label="Email" value={lead.email} isLink={`mailto:${lead.email}`} />
+              <InfoRow icon={Tag} label="Phone" value={lead.phone} isLink={`tel:${lead.phone}`} />
+              <InfoRow icon={Tag} label="Role" value={lead.role} />
+            </div>
+          </section>
+
+          {/* Business */}
+          <section>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Business</h3>
+            <div className="space-y-3">
+              <InfoRow icon={Tag} label="Budget" value={lead.budget} />
+              <InfoRow icon={Tag} label="Timeline" value={lead.timeline} />
+            </div>
+          </section>
+
+          {/* Status */}
+          <section className="pt-4 border-t border-white/[0.05]">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Status</h3>
+            <span className={`text-sm px-3 py-1.5 rounded-lg border ${statusColors[lead.leadstatus] || statusColors["New"]}`}>
+              {lead.leadstatus || "New"}
+            </span>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ icon: Icon, label, value, isLink }: any) {
+  if (!value) return null
+  return (
+    <div className="flex items-start gap-3">
+      <Icon className="h-4 w-4 text-muted-foreground mt-0.5" />
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        {isLink ? (
+          <a href={typeof isLink === "string" ? isLink : value} className="text-sm text-blue-400 hover:underline">
+            {value}
+          </a>
+        ) : (
+          <p className="text-sm text-white">{value}</p>
+        )}
+      </div>
+    </div>
+  )
+}
