@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId: SPREADSHEET_ID,
-          range: 'Sheet1!A2:U1000',
+          range: 'Work With Us Leads!A2:U1000',
         })
 
         const rows = response.data.values || []
@@ -78,7 +78,8 @@ export async function GET(request: NextRequest) {
 
     // Method 2: Try gviz endpoint (public sheet)
     try {
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`
+      const sheetName = 'Work With Us Leads'
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
 
       const response = await fetch(csvUrl, {
         headers: {
