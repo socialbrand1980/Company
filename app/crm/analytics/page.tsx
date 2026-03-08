@@ -175,12 +175,7 @@ export default function CRMAnalyticsPage() {
     .filter(year => !isNaN(year)))]
     .sort((a, b) => b - a)
 
-  // Set default selected year to latest year with data
-  useEffect(() => {
-    if (years.length > 0 && !selectedYear) {
-      setSelectedYear(years[0])
-    }
-  }, [years])
+  const defaultYear = years.length > 0 ? years[0] : new Date().getFullYear()
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
@@ -217,7 +212,7 @@ export default function CRMAnalyticsPage() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <select
-                  value={selectedYear}
+                  value={selectedYear || defaultYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-white text-sm"
                 >
