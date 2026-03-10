@@ -452,24 +452,24 @@ export default function CRMAnalyticsPage() {
     csvSections.push('============')
     
     // Insight 1: Top Status
-    const statusCounts = filteredLeads.reduce((acc: any, lead: Lead) => {
+    const statusCounts = filteredLeads.reduce((acc: Record<string, number>, lead: Lead) => {
       acc[lead.leadstatus] = (acc[lead.leadstatus] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
     const topStatus = Object.entries(statusCounts).sort((a, b) => b[1] - a[1])[0]
     if (topStatus) {
-      csvSections.push(`• Most leads are in '${topStatus[0] as string}' stage (${topStatus[1] as number} leads)`)
+      csvSections.push(`• Most leads are in '${topStatus[0]}' stage (${topStatus[1]} leads)`)
     }
 
     // Insight 2: Top Industry
-    const industryCounts = filteredLeads.reduce((acc: any, lead: Lead) => {
+    const industryCounts = filteredLeads.reduce((acc: Record<string, number>, lead: Lead) => {
       const industry = lead.industry || 'Unknown'
       acc[industry] = (acc[industry] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
     const topIndustry = Object.entries(industryCounts).sort((a, b) => b[1] - a[1])[0]
     if (topIndustry) {
-      csvSections.push(`• Top industry: ${topIndustry[0] as string} (${topIndustry[1] as number} leads)`)
+      csvSections.push(`• Top industry: ${topIndustry[0]} (${topIndustry[1]} leads)`)
     }
 
     // Insight 3: Revenue Insight
