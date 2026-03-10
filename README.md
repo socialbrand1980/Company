@@ -368,3 +368,5 @@ Planned features:
 ---
 
 **Built with ❤️ by SocialBrand 1980 Team**
+email: admin@socialbrand1980.com
+password: admin123

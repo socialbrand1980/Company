@@ -207,31 +207,88 @@ export default function CRMPipelinePage() {
     e.preventDefault()
     setDragOverStage(null)
     const email = e.dataTransfer.getData('email')
-    
+
+    console.log('🎯 Drag & Drop triggered')
+    console.log('Email:', email)
+    console.log('Target stage:', stageId)
+
+    if (!email || email.trim() === '') {
+      console.error('❌ Invalid email:', email)
+      alert('❌ Cannot move lead: Email is missing or invalid\n\nThis lead may not have an email address.')
+      return
+    }
+
     if (email) {
+      // Find the lead to get current status
+      const lead = leads.find(l => l.email === email)
+      
+      if (!lead) {
+        console.error('❌ Lead not found with email:', email)
+        alert('❌ Cannot move lead: Lead not found in local data\n\nEmail: ' + email)
+        return
+      }
+      
+      const currentStatus = lead.leadstatus
+      
+      console.log('✓ Lead found:', lead.brandname)
+      console.log('Current status:', currentStatus)
+      
+      // Optimistic update - update UI immediately
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.email === email 
+            ? { ...lead, leadstatus: stageId }
+            : lead
+        )
+      )
+      
       setUpdatingEmail(email)
       try {
+        console.log('📤 Sending PATCH request...')
+        console.log('Email:', email)
+        console.log('Field: Lead Status')
+        console.log('Value:', stageId)
+        
         const response = await fetch('/api/crm/leads', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email,
-            updates: { leadStatus: stageId }
+            updates: { 'Lead Status': stageId }
           }),
         })
-        
-        if (response.ok) {
-          await fetchLeads()
+
+        const result = await response.json()
+        console.log('📥 Response status:', response.status)
+        console.log('📥 Response body:', result)
+
+        if (response.ok && result.success) {
+          console.log('✅ Status updated successfully!')
+          // Refresh data to sync with backend after delay
+          setTimeout(() => {
+            console.log('🔄 Refreshing data...')
+            fetchLeads()
+          }, 1000)
         } else {
-          alert('Failed to update status')
+          console.error('❌ API returned error:', result)
+          // Revert optimistic update on error
+          console.log('⚠️ Reverting UI to previous state:', currentStatus)
+          fetchLeads()
+          alert(`❌ Failed to update status: ${result.error || 'Unknown error'}\n\nEmail: ${email}\nFrom: ${currentStatus}\nTo: ${stageId}`)
         }
       } catch (error) {
-        console.error('Failed to update status:', error)
-        alert('Failed to update status')
+        console.error('❌ Network error:', error)
+        // Revert on error
+        console.log('⚠️ Reverting UI to previous state:', currentStatus)
+        fetchLeads()
+        alert(`❌ Failed to update status: ${error.message}\n\nEmail: ${email}\nFrom: ${currentStatus}\nTo: ${stageId}`)
       } finally {
         setUpdatingEmail(null)
         setDraggedLead(null)
       }
+    } else {
+      console.error('❌ No email found in drag data')
+      alert('❌ Failed to move lead: No email found')
     }
   }
 
@@ -243,6 +300,10 @@ export default function CRMPipelinePage() {
   const updateLead = async (email: string, updates: Partial<Lead>) => {
     setUpdatingEmail(email)
     try {
+      console.log('📤 Updating lead via modal...')
+      console.log('Email:', email)
+      console.log('Updates:', updates)
+      
       const response = await fetch('/api/crm/leads', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -251,16 +312,22 @@ export default function CRMPipelinePage() {
           updates,
         }),
       })
-      
+
+      const result = await response.json()
+      console.log('📥 Response:', result)
+
       if (response.ok) {
+        console.log('✅ Lead updated successfully!')
         await fetchLeads()
         setEditingLead(null)
+        alert('✅ Lead updated successfully!')
       } else {
-        alert('Failed to update lead')
+        console.error('❌ Failed to update:', result)
+        alert(`❌ Failed to update lead: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Failed to update lead:', error)
-      alert('Failed to update lead')
+      console.error('❌ Failed to update lead:', error)
+      alert('❌ Failed to update lead. Check console for details.')
     } finally {
       setUpdatingEmail(null)
     }

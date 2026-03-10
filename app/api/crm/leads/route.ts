@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const SPREADSHEET_ID = '13ruAstGIxEl9y-9BQ1eWJsfTkYiwPAYK5obLug2q7N0'
 
 // Google Apps Script Webhook URL for updates
-const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwXg7tWwFqqDca60Ex3gAx_uQybHACzyk-VrDgOu17OuF-NOwo5llYnIf8Cjuzo86NW/exec'
+const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxEuYl1NDgZ3mOiJTottCRmObpL46ViavdErxfU_mMGoDtPOwIws5U3BXbEbsJw0sjQ/exec'
 
 export async function GET(request: NextRequest) {
   try {
@@ -161,25 +161,24 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const host = request.headers.get('host') || ''
-    const isLocal = host.includes('localhost') || host.includes('127.0.0.1')
-
-    if (!isLocal && process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'CRM is only accessible locally' },
-        { status: 403 }
-      )
-    }
-
+    console.log('📝 PATCH request received')
+    
     const body = await request.json()
+    console.log('📝 Request body:', body)
+    
     const { email, updates, action = 'update' } = body
 
     if (!email && action !== 'create') {
+      console.error('❌ Email is required')
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
       )
     }
+
+    console.log('📤 Sending update to Apps Script...')
+    console.log('Email:', email)
+    console.log('Updates:', updates)
 
     // Send update to Google Apps Script Webhook
     const webhookResponse = await fetch(APPS_SCRIPT_WEBHOOK_URL, {
@@ -194,21 +193,42 @@ export async function PATCH(request: NextRequest) {
       }),
     })
 
-    const result = await webhookResponse.json()
+    console.log('📥 Apps Script response status:', webhookResponse.status)
+    
+    // Read response as text first to see raw response
+    const responseText = await webhookResponse.text()
+    console.log('📥 Apps Script raw response:', responseText)
+    
+    // Then parse as JSON
+    let result
+    try {
+      result = JSON.parse(responseText)
+    } catch (e) {
+      console.error('❌ Failed to parse Apps Script response as JSON')
+      console.error('Response was:', responseText)
+      return NextResponse.json(
+        { error: 'Invalid response from Apps Script', response: responseText },
+        { status: 500 }
+      )
+    }
+    
+    console.log('📥 Apps Script parsed response:', result)
 
-    if (!webhookResponse.ok) {
+    if (!webhookResponse.ok || (result && result.error)) {
+      console.error('❌ Apps Script error:', result)
       throw new Error(result.error || 'Failed to update Google Sheet')
     }
 
+    console.log('✅ Lead updated successfully')
     return NextResponse.json({
       success: true,
       message: 'Lead updated successfully'
     })
 
   } catch (error) {
-    console.error('Google Sheets Update Error:', error)
+    console.error('❌ Google Sheets Update Error:', error)
     return NextResponse.json(
-      { error: 'Failed to update lead' },
+      { error: 'Failed to update lead', message: error.message },
       { status: 500 }
     )
   }
