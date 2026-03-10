@@ -281,7 +281,7 @@ export default function CRMPipelinePage() {
         // Revert on error
         console.log('⚠️ Reverting UI to previous state:', currentStatus)
         fetchLeads()
-        alert(`❌ Failed to update status: ${error.message}\n\nEmail: ${email}\nFrom: ${currentStatus}\nTo: ${stageId}`)
+        alert(`❌ Failed to update status: ${(error as Error).message}\n\nEmail: ${email}\nFrom: ${currentStatus}\nTo: ${stageId}`)
       } finally {
         setUpdatingEmail(null)
         setDraggedLead(null)
