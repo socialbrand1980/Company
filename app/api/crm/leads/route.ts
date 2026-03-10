@@ -228,7 +228,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('❌ Google Sheets Update Error:', error)
     return NextResponse.json(
-      { error: 'Failed to update lead', message: error.message },
+      { error: 'Failed to update lead', message: (error as Error).message },
       { status: 500 }
     )
   }
