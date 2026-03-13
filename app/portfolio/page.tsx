@@ -4,9 +4,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { Footer } from "@/components/footer"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
-import { client, type Portfolio } from "@/lib/sanity"
-
-export const revalidate = 3600
+import { sanityFetch, type Portfolio } from "@/lib/sanity"
 
 const PORTFOLIOS_QUERY = `*[_type == "portfolio" && defined(slug.current)] | order(featured desc, completedDate desc) {
   _id,
@@ -115,11 +113,10 @@ function buildPanels(portfolio: PortfolioCredential): PortfolioPanel[] {
 
 async function getPortfolios() {
   try {
-    const portfolios = await client.fetch<PortfolioCredential[]>(
-      PORTFOLIOS_QUERY,
-      {},
-      { next: { revalidate, tags: ["portfolio"] } }
-    )
+    const portfolios = await sanityFetch<PortfolioCredential[]>({
+      query: PORTFOLIOS_QUERY,
+      tags: ["portfolio"],
+    })
 
     return portfolios || []
   } catch (error) {
