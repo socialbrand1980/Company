@@ -1,13 +1,14 @@
-"use client"
-
-import React from "react"
 import Link from "next/link"
-import { Calendar, ArrowRight, Compass, MessageSquare, Camera, Users2, Target, Layers, Zap, TrendingUp } from "lucide-react"
-import { sanityFetch, type Portfolio } from '@/lib/sanity'
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
 
-const PORTFOLIOS_QUERY = `*[_type == "portfolio" && defined(slug.current)] | order(completedDate desc, featured desc) {
+import { Footer } from "@/components/footer"
+import { Navigation } from "@/components/navigation"
+import { Button } from "@/components/ui/button"
+import { client, type Portfolio } from "@/lib/sanity"
+
+export const revalidate = 3600
+
+const PORTFOLIOS_QUERY = `*[_type == "portfolio" && defined(slug.current)] | order(featured desc, completedDate desc) {
   _id,
   title,
   "slug": slug.current,
@@ -17,266 +18,452 @@ const PORTFOLIOS_QUERY = `*[_type == "portfolio" && defined(slug.current)] | ord
   services,
   completedDate,
   featured,
-  "clientLogoUrl": clientLogo.asset->url,
-  "projectImageUrl": projectImage.asset->url,
   projectUrl,
+  "clientLogoUrl": clientLogo.asset->url,
+  "clientLogoAlt": coalesce(clientLogo.alt, clientName),
+  "projectImageUrl": projectImage.asset->url,
+  "projectImageAlt": coalesce(projectImage.alt, title),
+  "gallery": gallery[] {
+    "url": asset->url,
+    "alt": alt
+  },
+  results[] {
+    metric,
+    value
+  }
 }`
 
-const CATEGORIES = [
-  { name: "All", icon: Zap },
-  { name: "Brand Strategy & Positioning", icon: Compass },
-  { name: "Social Media Management", icon: MessageSquare },
-  { name: "Content Production", icon: Camera },
-  { name: "KOL & Influencer Activation", icon: Users2 },
-  { name: "Performance Marketing", icon: Target },
-  { name: "Omnichannel Marketing Strategy", icon: Layers },
-]
+interface PortfolioCredential extends Portfolio {
+  clientLogoAlt?: string
+  projectImageAlt?: string
+}
 
-export default function PortfolioPage() {
-  const [activeCategory, setActiveCategory] = React.useState("All")
-  const [portfolios, setPortfolios] = React.useState<Portfolio[]>([])
-  const [loading, setLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    async function fetchPortfolios() {
-      try {
-        const fetched = await sanityFetch<Portfolio[]>({
-          query: PORTFOLIOS_QUERY,
-        })
-        setPortfolios(fetched || [])
-      } catch (error) {
-        console.error('Error fetching portfolios:', error)
-        setPortfolios([])
-      } finally {
-        setLoading(false)
-      }
+type PortfolioPanel =
+  | {
+      type: "image"
+      title: string
+      subtitle?: string
+      imageUrl: string
+      imageAlt: string
     }
-    fetchPortfolios()
-  }, [])
+  | {
+      type: "text"
+      title: string
+      subtitle?: string
+    }
 
-  const filteredPortfolios = activeCategory === "All"
-    ? portfolios
-    : portfolios.filter((p: Portfolio) => p.services?.includes(activeCategory))
+function formatMonthYear(value: string) {
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  })
+}
 
-  const featuredPortfolios = filteredPortfolios.filter((p: Portfolio) => p.featured)
-  const regularPortfolios = filteredPortfolios.filter((p: Portfolio) => !p.featured)
+function formatServices(services: string[] = []) {
+  if (services.length === 0) return "Not specified"
+  if (services.length <= 2) return services.join(", ")
+  return `${services.slice(0, 2).join(", ")} +${services.length - 2}`
+}
 
-  if (loading) {
-    return (
-      <>
-        <Navigation />
-        <main className="min-h-screen pt-32 pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="animate-pulse space-y-8">
-              <div className="h-12 w-64 bg-white/5 rounded mx-auto" />
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-80 bg-white/5 rounded-2xl" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    )
+function buildPanels(portfolio: PortfolioCredential): PortfolioPanel[] {
+  const galleryPanels: PortfolioPanel[] =
+    portfolio.gallery
+      ?.filter((item) => item.url)
+      .map((item, index) => ({
+        type: "image" as const,
+        title: `Frame ${String(index + 1).padStart(2, "0")}`,
+        subtitle: item.alt || portfolio.clientName,
+        imageUrl: item.url as string,
+        imageAlt: item.alt || `${portfolio.title} image ${index + 1}`,
+      })) || []
+
+  if (galleryPanels.length > 0) {
+    return galleryPanels
   }
+
+  const servicePanels: PortfolioPanel[] = (portfolio.services || []).slice(0, 4).map((service) => ({
+    type: "text" as const,
+    title: service,
+    subtitle: "Service scope",
+  }))
+
+  const fallbackPanels: PortfolioPanel[] = [
+    {
+      type: "text",
+      title: portfolio.clientName,
+      subtitle: "Client",
+    },
+    {
+      type: "text",
+      title: portfolio.industry,
+      subtitle: "Industry",
+    },
+    {
+      type: "text",
+      title: portfolio.featured ? "Featured" : "Published",
+      subtitle: "Status",
+    },
+    {
+      type: "text",
+      title: formatMonthYear(portfolio.completedDate),
+      subtitle: "Completed",
+    },
+  ]
+
+  return [...servicePanels, ...fallbackPanels].slice(0, 4)
+}
+
+async function getPortfolios() {
+  try {
+    const portfolios = await client.fetch<PortfolioCredential[]>(
+      PORTFOLIOS_QUERY,
+      {},
+      { next: { revalidate, tags: ["portfolio"] } }
+    )
+
+    return portfolios || []
+  } catch (error) {
+    console.error("Error fetching portfolios:", error)
+    return []
+  }
+}
+
+export default async function PortfolioPage() {
+  const portfolios = await getPortfolios()
 
   return (
     <>
       <Navigation />
-      <main className="min-h-screen pt-32 sm:pt-40 lg:pt-48 pb-16 sm:pb-24 lg:pb-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-            <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-4 neon-text">
-              Our Work
-            </p>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground text-balance mb-6">
-              Featured <span className="neon-text">Projects</span>
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground">
-              Discover how we've helped brands achieve remarkable results through strategic digital solutions.
-            </p>
-          </div>
+      <main id="portfolio" className="bg-background">
+        <section className="border-b border-border/30 pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl">
+              <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+                Portfolio
+              </p>
+              <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)] lg:items-end">
+                <div>
+                  <h1 className="text-2xl sm:text-[2rem] font-medium tracking-tight text-foreground">
+                    Strategic work presented with more context, clarity, and momentum.
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm sm:text-[15px] leading-7 text-muted-foreground">
+                    Scroll through each case study to see the visual output, project scope, and measurable result in
+                    one continuous flow.
+                  </p>
+                </div>
+                <div className="rounded-[1.5rem] border border-border/70 bg-card/20 p-4 sm:p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                    What You Will See
+                  </p>
+                  <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+                    <p>Visual direction and hero asset</p>
+                    <p>Project background and service scope</p>
+                    <p>Results, supporting frames, and next-step CTA</p>
+                  </div>
+                </div>
+              </div>
 
-          {/* Category Filter - Horizontal Scroll */}
-          <div className="mb-16 sm:mb-20 lg:mb-24">
-            <div className="scrollable-categories">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.name}
-                  type="button"
-                  onClick={() => setActiveCategory(category.name)}
-                  className={`
-                    inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap hover:scale-105
-                    ${activeCategory === category.name
-                      ? "neon-btn text-white"
-                      : "glass-card text-muted-foreground hover:text-foreground"
-                    }
-                  `}
-                >
-                  <category.icon className="h-4 w-4 flex-shrink-0" />
-                  <span>{category.name}</span>
-                </button>
-              ))}
+              {portfolios.length > 0 ? (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {portfolios.map((portfolio, index) => (
+                    <a
+                      key={portfolio._id}
+                      href={`#${portfolio.slug}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-card/20 px-3 py-2 text-xs text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+                    >
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <span>{portfolio.clientName}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
+        </section>
 
-          {/* Featured Projects */}
-          {featuredPortfolios.length > 0 && (
-            <div className="mb-16">
-              <h2 className="text-2xl font-bold text-foreground mb-8 flex items-center gap-3">
-                <TrendingUp className="h-6 w-6 text-primary" />
-                Featured Projects
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
-                {featuredPortfolios.map((portfolio: Portfolio, index: number) => (
-                  <Link
-                    key={portfolio._id}
-                    href={`/portfolio/${portfolio.slug}`}
-                    className="group glass-card rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="aspect-video w-full bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
-                      {portfolio.projectImageUrl ? (
-                        <img
-                          src={portfolio.projectImageUrl}
-                          alt={portfolio.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-6xl font-bold text-primary/20">
-                            {portfolio.title.charAt(0)}
+        <section className="py-6 sm:py-8 lg:py-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            {portfolios.length === 0 ? (
+              <div className="rounded-[2rem] border border-border/40 bg-card/30 px-6 py-14 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Portfolio entries will appear here automatically once they are published in Sanity.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-10 sm:space-y-12 lg:space-y-16">
+                {portfolios.map((portfolio, index) => {
+                  const panels = buildPanels(portfolio)
+                  const projectResults = portfolio.results?.filter((item) => item.metric && item.value) || []
+
+                  return (
+                    <article key={portfolio._id} id={portfolio.slug} className="scroll-mt-28 sm:scroll-mt-32">
+                      <div className="mb-5 flex items-center gap-4">
+                        <span className="shrink-0 text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+                          Portfolio {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <div className="h-px flex-1 bg-gradient-to-r from-border via-border/70 to-transparent" />
+                        {portfolio.featured ? (
+                          <span className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+                            Featured
                           </span>
-                        </div>
-                      )}
-                      <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
-                          Featured
-                        </span>
+                        ) : null}
                       </div>
-                    </div>
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        {portfolio.clientLogoUrl && (
-                          <img
-                            src={portfolio.clientLogoUrl}
-                            alt={portfolio.clientName}
-                            className="h-8 object-contain"
-                          />
-                        )}
-                        <span className="text-sm text-muted-foreground">{portfolio.clientName}</span>
-                      </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                        {portfolio.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {portfolio.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {portfolio.services?.slice(0, 2).map((service: string) => (
-                            <span key={service} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                              {service}
-                            </span>
-                          ))}
-                          {portfolio.services?.length > 2 && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-muted-foreground">
-                              +{portfolio.services.length - 2}
-                            </span>
-                          )}
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* All Projects */}
-          <div>
-            {featuredPortfolios.length > 0 && (
-              <h2 className="text-2xl font-bold text-foreground mb-8">All Projects</h2>
-            )}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {regularPortfolios.map((portfolio: Portfolio, index: number) => (
-                <Link
-                  key={portfolio._id}
-                  href={`/portfolio/${portfolio.slug}`}
-                  className="group glass-card rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="aspect-video w-full bg-gradient-to-br from-secondary/30 to-muted/30 relative overflow-hidden">
-                    {portfolio.projectImageUrl ? (
-                      <img
-                        src={portfolio.projectImageUrl}
-                        alt={portfolio.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-5xl font-bold text-muted-foreground/20 group-hover:scale-110 transition-transform duration-500">
-                          {portfolio.title.charAt(0)}
-                        </span>
+                      <div className="rounded-[2rem] border border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4 shadow-[0_20px_80px_rgba(0,0,0,0.16),inset_0_0_0_1px_rgba(255,255,255,0.04)] transition-shadow hover:shadow-[0_24px_100px_rgba(45,117,255,0.12)] sm:p-6 lg:p-8">
+                        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] lg:gap-8">
+                          <div className="flex flex-col gap-4 sm:gap-5">
+                            <div className="group overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                              <div className="aspect-[4/3] sm:aspect-[16/11] w-full bg-muted/20">
+                                {portfolio.projectImageUrl ? (
+                                  <img
+                                    src={portfolio.projectImageUrl}
+                                    alt={portfolio.projectImageAlt || portfolio.title}
+                                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                                    loading={index === 0 ? "eager" : "lazy"}
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center bg-muted/30 px-6 text-center">
+                                    <div>
+                                      <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+                                        Main Visual
+                                      </p>
+                                      <p className="mt-3 text-base font-medium text-foreground">{portfolio.title}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="rounded-[1.5rem] border border-border/60 bg-card/10 p-4 sm:p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                Overview
+                              </p>
+                              <p className="mt-3 max-w-[64ch] text-sm sm:text-[15px] leading-6 text-muted-foreground">
+                                {portfolio.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-6">
+                            <div className="flex flex-col rounded-[1.5rem] border border-border/60 bg-card/20 p-5 sm:p-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                    {portfolio.clientName}
+                                  </p>
+                                  <h2 className="mt-3 text-xl sm:text-2xl font-medium tracking-tight text-foreground">
+                                    {portfolio.title}
+                                  </h2>
+                                </div>
+                                {portfolio.clientLogoUrl ? (
+                                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/30 bg-background/40 p-2">
+                                    <img
+                                      src={portfolio.clientLogoUrl}
+                                      alt={portfolio.clientLogoAlt || portfolio.clientName}
+                                      className="max-h-full w-auto object-contain"
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              <p className="mt-4 text-sm sm:text-[15px] leading-7 text-muted-foreground">
+                                A compact summary of the brief, execution, and outcome so the project reads clearly at a
+                                glance before you continue scrolling.
+                              </p>
+
+                              <div className="mt-6 rounded-[1.25rem] border border-border/60 bg-background/30 px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                  Project Snapshot
+                                </p>
+                                <div className="mt-4 space-y-3 text-sm">
+                                  <div className="flex items-start justify-between gap-4 border-t border-border/30 pt-3">
+                                    <span className="text-muted-foreground">Client</span>
+                                    <span className="max-w-[60%] text-right text-foreground">{portfolio.clientName}</span>
+                                  </div>
+                                  <div className="flex items-start justify-between gap-4 border-t border-border/30 pt-3">
+                                    <span className="text-muted-foreground">Industry</span>
+                                    <span className="max-w-[60%] text-right text-foreground">{portfolio.industry}</span>
+                                  </div>
+                                  <div className="flex items-start justify-between gap-4 border-t border-border/30 pt-3">
+                                    <span className="text-muted-foreground">Completed</span>
+                                    <span className="max-w-[60%] text-right text-foreground">
+                                      {formatMonthYear(portfolio.completedDate)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-start justify-between gap-4 border-t border-border/30 pt-3">
+                                    <span className="text-muted-foreground">Scope</span>
+                                    <span className="max-w-[60%] text-right text-foreground">
+                                      {formatServices(portfolio.services)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                                <Button asChild className="neon-btn text-white font-medium">
+                                  <Link href="/work-with-us">
+                                    Discuss Similar Scope
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                {portfolio.projectUrl ? (
+                                  <Button asChild variant="outline" className="border-border/40 bg-background/20">
+                                    <a href={portfolio.projectUrl} target="_blank" rel="noopener noreferrer">
+                                      Visit Project
+                                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="rounded-[1.5rem] border border-border/60 bg-card/10 p-4 sm:p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                Service Focus
+                              </p>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {(portfolio.services || []).map((service) => (
+                                  <span
+                                    key={`${portfolio._id}-${service}`}
+                                    className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-primary transition-colors hover:border-primary/40 hover:bg-primary/15"
+                                  >
+                                    {service}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="mt-5 rounded-[1.25rem] border border-border/60 bg-background/30 px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                  Why It Matters
+                                </p>
+                                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                                  This section clarifies the working scope so readers can immediately connect the creative
+                                  output with the strategic services behind it.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {projectResults.length > 0 ? (
+                          <div className="mt-6 rounded-[1.5rem] border border-border/60 bg-card/10 p-4 sm:p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                  Project Result
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                  Key outcomes placed ahead of the supporting frames so the impact lands clearly.
+                                </p>
+                              </div>
+                              <span className="hidden sm:inline text-[11px] uppercase tracking-[0.18em] text-primary">
+                                {projectResults.length} highlights
+                              </span>
+                            </div>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                              {projectResults.map((result, resultIndex) => (
+                                <div
+                                  key={`${portfolio._id}-result-${resultIndex}`}
+                                  className="rounded-[1.25rem] border border-border/60 bg-card/20 px-4 py-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] transition-all hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/8"
+                                >
+                                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                                    {result.metric}
+                                  </p>
+                                  <p className="mt-2 text-sm sm:text-base font-medium leading-6 text-foreground">
+                                    {result.value}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-6 rounded-[1.5rem] border border-border/60 bg-card/10 p-4 sm:p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                                Supporting Frames
+                              </p>
+                              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                Additional visuals and project markers that reinforce the case study.
+                              </p>
+                            </div>
+                            <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                              {panels.length} panels
+                            </span>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                            {panels.map((panel, panelIndex) => (
+                              <div
+                                key={`${portfolio._id}-panel-${panelIndex}`}
+                                className="group overflow-hidden rounded-[1.25rem] border border-border/60 bg-card/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] transition-all hover:-translate-y-0.5 hover:border-primary/55"
+                              >
+                                {panel.type === "image" ? (
+                                  <>
+                                    <div className="aspect-[4/5] overflow-hidden bg-muted/20">
+                                      <img
+                                        src={panel.imageUrl}
+                                        alt={panel.imageAlt}
+                                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                    <div className="border-t border-border/20 px-3 py-3">
+                                      <p className="text-xs font-medium text-foreground">{panel.title}</p>
+                                      {panel.subtitle ? (
+                                        <p className="mt-1 text-[11px] text-muted-foreground">{panel.subtitle}</p>
+                                      ) : null}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="flex aspect-[4/5] flex-col justify-start px-3 py-4 sm:px-4">
+                                    {panel.subtitle ? (
+                                      <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                                        {panel.subtitle}
+                                      </p>
+                                    ) : null}
+                                    <p className="mt-2 text-sm sm:text-base font-medium leading-6 text-foreground">
+                                      {panel.title}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      {portfolio.clientLogoUrl && (
-                        <img
-                          src={portfolio.clientLogoUrl}
-                          alt={portfolio.clientName}
-                          className="h-6 object-contain"
-                        />
-                      )}
-                      <span className="text-xs text-muted-foreground">{portfolio.clientName}</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                      {portfolio.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {portfolio.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(portfolio.completedDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-primary group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="border-t border-border/30 py-8 sm:py-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="rounded-[1.75rem] border border-border/70 bg-card/20 px-5 py-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:px-6 sm:py-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                    Next Step
+                  </p>
+                  <p className="mt-2 text-sm sm:text-[15px] leading-7 text-muted-foreground">
+                    If you want a portfolio-worthy outcome for your brand, we can build the scope from strategy to
+                    execution.
+                  </p>
+                </div>
+                <Button asChild className="neon-btn text-white font-medium">
+                  <Link href="/work-with-us">
+                    Start a Project
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Empty State */}
-          {portfolios.length === 0 && (
-            <div className="text-center py-16">
-              <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
-                <TrendingUp className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No projects yet</h3>
-              <p className="text-muted-foreground">Check back soon to see our latest work!</p>
-            </div>
-          )}
-
-          {filteredPortfolios.length === 0 && portfolios.length > 0 && (
-            <div className="text-center py-16">
-              <div className="glass-card inline-flex items-center justify-center h-16 w-16 rounded-full mb-4">
-                <TrendingUp className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No projects in this category</h3>
-              <p className="text-muted-foreground">Try selecting a different industry.</p>
-            </div>
-          )}
-        </div>
+        </section>
       </main>
       <Footer />
     </>

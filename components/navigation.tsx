@@ -20,8 +20,8 @@ export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const isHomePage = pathname === "/"
-  const isPortfolioPage = pathname === "/portfolio"
-  const isArticlesPage = pathname === "/article"
+  const isPortfolioPage = pathname.startsWith("/portfolio")
+  const isArticlesPage = pathname.startsWith("/article")
   const isWorkWithUsPage = pathname === "/work-with-us"
 
   useEffect(() => {

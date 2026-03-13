@@ -108,7 +108,9 @@ export interface Portfolio {
   slug: string
   clientName: string
   clientLogoUrl?: string
+  clientLogoAlt?: string
   projectImageUrl?: string
+  projectImageAlt?: string
   projectImage?: {
     asset?: {
       _ref: string
