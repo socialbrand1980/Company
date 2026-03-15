@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { FEEDBACK_SIGNALS, hasFeedbackSignal, readFeedbackLearning } from "./feedback-learning.js";
 import { listJsonFiles, readJson } from "./helpers.js";
 
 const latestCountArg = process.argv.find((arg) => arg.startsWith("--latest-count="));
 const latestCount = latestCountArg ? Number.parseInt(latestCountArg.split("=")[1], 10) : Number.parseInt(process.env.REVIEW_COUNT || "1", 10);
 const threshold = Number.parseInt(process.env.ARTICLE_REVIEW_MIN_SCORE || "80", 10);
+const feedbackLearning = readFeedbackLearning();
 
 export const GENERIC_PHRASES = [
   "nilai beritanya ada pada",
@@ -93,6 +95,8 @@ export function reviewArticle(article, filePath, options = {}) {
   let score = 100;
   const reasons = [];
   const criticalReasons = [];
+  const sourceMinimum = hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseSourceDensity) ? 4 : 2;
+  const genericThreshold = hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseSpecificity) ? 1 : 2;
 
   if (!article.title || countWords(article.title) < 6) {
     score -= 15;
@@ -131,14 +135,18 @@ export function reviewArticle(article, filePath, options = {}) {
 
   const joined = paragraphs.join(" ").toLowerCase();
   const genericHits = GENERIC_PHRASES.filter((phrase) => joined.includes(phrase));
-  if (genericHits.length >= 2) {
+  if (genericHits.length >= genericThreshold) {
     score -= 18;
     criticalReasons.push("nada tulisan masih terlalu generik");
   }
 
   if (AWKWARD_PATTERNS.some((pattern) => paragraphs.some((paragraph) => pattern.test(paragraph)))) {
     score -= 8;
-    reasons.push("ada frasa yang masih canggung");
+    if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.smoothLanguage)) {
+      criticalReasons.push("bahasa artikel masih terasa canggung");
+    } else {
+      reasons.push("ada frasa yang masih canggung");
+    }
   }
 
   if (practicalTakeaways.length < 3) {
@@ -156,9 +164,9 @@ export function reviewArticle(article, filePath, options = {}) {
     const invalidSourceReference = (article.sourceReferences || []).some((entry) => {
       return !entry || !entry.title || !entry.publisher || !entry.url;
     });
-    if (sourceRefs < 2) {
+    if (sourceRefs < sourceMinimum) {
       score -= 15;
-      criticalReasons.push("artikel news belum punya konteks sumber yang cukup");
+      criticalReasons.push(`artikel news belum punya konteks sumber yang cukup, minimum ${sourceMinimum} sumber`);
     }
 
     if (invalidSourceReference) {
@@ -216,6 +224,11 @@ export function reviewArticle(article, filePath, options = {}) {
     if (!/audit|uji|cek|rapikan|tentukan|ukur|pangkas|prioritas|metrik|brief|approval|funnel|positioning|channel|eksperimen/i.test(`${joined} ${practicalTakeaways.join(" ")}`)) {
       score -= 12;
       criticalReasons.push("artikel evergreen belum cukup actionable");
+    }
+
+    if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.tightenTopicRelevance) && titleKeywords.length > 0 && countKeywordMatches(joined, titleKeywords) < 2) {
+      score -= 12;
+      criticalReasons.push("artikel evergreen belum cukup fokus pada inti topik");
     }
   }
 

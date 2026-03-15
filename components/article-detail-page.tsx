@@ -9,6 +9,7 @@ import { sanityFetch, type Article, imageUrlFor } from '@/lib/sanity'
 import imageUrlBuilder from '@sanity/image-url'
 import { client } from '@/lib/sanity'
 import { SubscriptionForm } from '@/components/subscription-form'
+import { ArticleFeedback } from '@/components/article-feedback'
 
 const builder = imageUrlBuilder(client)
 
@@ -22,6 +23,7 @@ const ARTICLE_QUERY = `*[_type == "article" && slug.current == $slug][0] {
   excerpt,
   content,
   category,
+  contentType,
   author,
   publishedAt,
   readTime,
@@ -290,6 +292,8 @@ export default function ArticleDetailPage({ slug }: ArticleDetailPageProps) {
             )}
           </div>
         </div>
+
+        <ArticleFeedback articleSlug={article.slug} />
 
         {article.relatedArticles && article.relatedArticles.length > 0 && (
           <div className="mt-16 pt-12 border-t border-border/50">

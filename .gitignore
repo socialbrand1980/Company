@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /content-ops/node_modules
+/content-ops/runtime
 
 # next.js
 /.next/

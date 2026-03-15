@@ -16,7 +16,9 @@ import {
   listJsonFiles,
 } from "./helpers.js";
 import { generateCoverImage } from "./generate-cover-image.js";
+import { FEEDBACK_SIGNALS, hasFeedbackSignal, readFeedbackLearning } from "./feedback-learning.js";
 import { fetchDeepResearchPacket, fetchNewsCandidates } from "./news-sourcing.js";
+import { fetchRecentPublishedArticleSignals } from "./sanity-intelligence.js";
 
 dotenv.config();
 
@@ -50,6 +52,7 @@ function loadBrandContext() {
   const seo = readText(CONTEXT_FILES.seo);
   const publishing = readText(CONTEXT_FILES.publishing);
   const visual = readText(CONTEXT_FILES.visual);
+  const feedbackLearning = readFeedbackLearning();
 
   return {
     toneRules: extractBulletItems(extractSection(agents, "Tone Rules")).slice(0, 4),
@@ -64,6 +67,7 @@ function loadBrandContext() {
     visualMood: extractBulletItems(extractSection(visual, "Preferred Color Mood")).slice(0, 5),
     visualTypes: extractBulletItems(extractSection(visual, "Preferred Cover Image Types")).slice(0, 5),
     visualAvoid: extractBulletItems(extractSection(visual, "What to Avoid")).slice(0, 5),
+    feedbackLearning,
   };
 }
 
@@ -132,6 +136,33 @@ function buildTopicCandidates(topicSections) {
   ];
 }
 
+function scoreTopicWithFeedback(topic, feedbackLearning) {
+  let score = 0;
+  const category = mapCategory(topic);
+  const preferredCategories = feedbackLearning?.preferredCategories || [];
+  const discouragedCategories = feedbackLearning?.discouragedCategories || [];
+  const preferredContentTypes = feedbackLearning?.preferredContentTypes || [];
+  const discouragedContentTypes = feedbackLearning?.discouragedContentTypes || [];
+
+  if (preferredCategories.includes(category)) {
+    score += 3;
+  }
+
+  if (discouragedCategories.includes(category)) {
+    score -= 3;
+  }
+
+  if (preferredContentTypes.includes("evergreen")) {
+    score += 1;
+  }
+
+  if (discouragedContentTypes.includes("evergreen")) {
+    score -= 1;
+  }
+
+  return score;
+}
+
 function isTipsTopic(topic) {
   return /^(cara|framework|audit|checklist|sop|kapan|tanda)\b/i.test(String(topic || "").trim());
 }
@@ -144,11 +175,19 @@ function getEvergreenStyle() {
 function pickTopic(topicSections, recentTopics, options = {}) {
   const recentSet = new Set(recentTopics.map((topic) => normalizeTopic(topic)).filter(Boolean));
   const style = options.style || "standard";
+  const feedbackLearning = options.feedbackLearning || null;
   const allCandidates = buildTopicCandidates(topicSections);
   const candidates = allCandidates
     .filter(({ topic }) => !recentSet.has(normalizeTopic(topic)))
     .filter(({ topic }) => style !== "tips" || isTipsTopic(topic))
-    .sort((a, b) => b.priority - a.priority);
+    .sort((a, b) => {
+      const priorityGap = b.priority - a.priority;
+      if (priorityGap !== 0) {
+        return priorityGap;
+      }
+
+      return scoreTopicWithFeedback(b.topic, feedbackLearning) - scoreTopicWithFeedback(a.topic, feedbackLearning);
+    });
 
   const fallbackPool = style === "tips"
     ? allCandidates.filter(({ topic }) => isTipsTopic(topic))
@@ -471,6 +510,34 @@ function getMinimumWords() {
   const minArg = process.argv.find((arg) => arg.startsWith("--min-words="));
   const parsed = minArg ? Number.parseInt(minArg.split("=")[1], 10) : DEFAULT_MIN_WORDS;
   return Number.isFinite(parsed) && parsed >= 300 ? parsed : 800;
+}
+
+function getAdaptiveMinimumWords(baseMinimum, feedbackLearning, contentType) {
+  let minimum = baseMinimum;
+
+  if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseBusinessDepth)) {
+    minimum += contentType === "newsAnalysis" ? 180 : 120;
+  }
+
+  if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseSpecificity)) {
+    minimum += 80;
+  }
+
+  return minimum;
+}
+
+function getAdaptiveResearchLimit(feedbackLearning) {
+  let limit = 6;
+
+  if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseSourceDensity)) {
+    limit += 2;
+  }
+
+  if (hasFeedbackSignal(feedbackLearning, FEEDBACK_SIGNALS.increaseLocalContext)) {
+    limit += 1;
+  }
+
+  return limit;
 }
 
 function getArticleMode() {
@@ -1446,7 +1513,7 @@ function buildEvergreenSeoDescription(topic, pillar) {
 
 function buildEvergreenArticle(topic, context) {
   const title = topic;
-  const minimumWords = getMinimumWords();
+  const minimumWords = getAdaptiveMinimumWords(getMinimumWords(), context.feedbackLearning, "evergreen");
   const pillar = derivePillar(topic);
   const primaryAudience = pickPrimaryAudience(topic);
   const profile = buildEvergreenInsightProfile(topic, pillar, primaryAudience);
@@ -1487,19 +1554,20 @@ function buildEvergreenArticle(topic, context) {
       seo: context.seoRules[0] || "use a clear primary keyword naturally",
       publishing: context.publishingRules[0] || "Always create documents in Sanity as drafts first.",
       topicSeed: topic,
+      feedbackSignals: context.feedbackLearning?.activeSignals || [],
     },
   };
 }
 
 async function buildNewsArticle(news, context) {
   const title = buildNewsTitle(news);
-  const minimumWords = getMinimumWords();
+  const minimumWords = getAdaptiveMinimumWords(getMinimumWords(), context.feedbackLearning, "newsAnalysis");
   const newsStyle = getNewsArticleStyle();
   const researchMode = getResearchMode();
   const researchPacket = researchMode === "deep"
     ? await fetchDeepResearchPacket({
       news,
-      limit: 6,
+      limit: getAdaptiveResearchLimit(context.feedbackLearning),
       maxAgeDays: getDeepResearchMaxAgeDays(),
     })
     : { topic: "", queries: [], items: [] };
@@ -1561,6 +1629,7 @@ async function buildNewsArticle(news, context) {
       researchMode,
       researchTopic: researchPacket.topic,
       researchSourceCount: researchPacket.items.length,
+      feedbackSignals: context.feedbackLearning?.activeSignals || [],
     },
   };
 }
@@ -1597,17 +1666,22 @@ async function main() {
   const articleCount = getArticleCount();
   const articleMode = getArticleMode();
   const evergreenStyle = getEvergreenStyle();
+  const sanitySignals = await fetchRecentPublishedArticleSignals(40);
   const initialRecentTopics = [
     ...readJson(RECENT_TOPICS_FILE, []),
     ...readRecentOutputTitles(),
+    ...sanitySignals.topicSeeds,
   ];
-  const initialRecentNewsLinks = readJson(RECENT_NEWS_FILE, []);
+  const initialRecentNewsLinks = [...readJson(RECENT_NEWS_FILE, []), ...sanitySignals.sourceLinks];
   const selectedTitles = [];
   const selectedTrackingTopics = [];
   const usedNewsLinks = [];
   const newsPool = await getNewsPool(articleCount, initialRecentTopics, initialRecentNewsLinks);
 
   if ((articleMode === "mixed" || articleMode === "news") && newsPool.length === 0) {
+    if (String(process.env.REQUIRE_FRESH_NEWS || "").trim() === "1" && articleMode === "news") {
+      throw new Error("NO_FRESH_NEWS");
+    }
     console.warn("No relevant news candidates found. Falling back to evergreen topics for this run.");
   }
 
@@ -1624,6 +1698,7 @@ async function main() {
     } else {
       const topic = pickTopic(topicSections, [...initialRecentTopics, ...selectedTitles], {
         style: evergreenStyle,
+        feedbackLearning: context.feedbackLearning,
       });
       article = buildEvergreenArticle(topic, context);
     }

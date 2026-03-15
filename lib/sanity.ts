@@ -93,6 +93,7 @@ export interface Article {
   status?: string
   publishedAt: string
   readTime: string
+  contentType?: string
   practicalTakeaways?: string[]
   coverImageBrief?: string
   coverImageAlt?: string

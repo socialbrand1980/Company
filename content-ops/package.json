@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/check-content-system.js",
+    "feedback:brief": "node scripts/build-feedback-brief.js",
     "generate": "node scripts/generate-article.js",
     "rewrite": "node scripts/rewrite-generated-articles.js",
     "review": "node scripts/review-generated-articles.js",
     "migrate:public-ids": "node scripts/migrate-private-article-ids.js",
     "publish:dry": "node scripts/publish-to-sanity.js --dry-run",
     "publish": "node scripts/publish-to-sanity.js",
-    "run": "node scripts/generate-and-publish.js"
+    "run": "node scripts/generate-and-publish.js",
+    "run:automation": "node scripts/run-automation-cycle.js"
   },
   "dependencies": {
     "@sanity/client": "^7.16.0",

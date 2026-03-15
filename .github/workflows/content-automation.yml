@@ -1,0 +1,80 @@
+name: Content Automation
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "news untuk scraping berita, evergreen untuk artikel abadi, mixed untuk keduanya"
+        required: true
+        default: "news"
+        type: choice
+        options:
+          - news
+          - evergreen
+          - mixed
+      max_news_per_run:
+        description: "Maksimum artikel news per sekali jalan"
+        required: true
+        default: "3"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-automation
+  cancel-in-progress: false
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: content-ops/package-lock.json
+
+      - name: Install content-ops dependencies
+        working-directory: content-ops
+        run: npm ci
+
+      - name: Resolve automation mode
+        id: automation
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+            echo "max_news=${{ inputs.max_news_per_run }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+            echo "mode=evergreen" >> "$GITHUB_OUTPUT"
+            echo "max_news=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=news" >> "$GITHUB_OUTPUT"
+            echo "max_news=3" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run content automation
+        working-directory: content-ops
+        env:
+          SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          SANITY_PUBLISH_MODE: published
+          DEFAULT_LANGUAGE: id-ID
+          AUTHOR_NAME: Jhordi Deamarall
+          MIN_WORDS: 900
+          ARTICLE_AUTO_REWRITE: "1"
+          ARTICLE_REVIEW_MIN_SCORE: "84"
+          CONTENT_FEEDBACK_WINDOW_DAYS: "90"
+          AUTOMATION_MODE: ${{ steps.automation.outputs.mode }}
+          AUTOMATION_MAX_NEWS_PER_RUN: ${{ steps.automation.outputs.max_news }}
+        run: npm run run:automation
