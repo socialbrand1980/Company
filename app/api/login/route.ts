@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  CRM_SESSION_COOKIE_NAME,
+  CRM_SESSION_MAX_AGE,
+  createCrmSessionToken,
+  getCrmCredentials,
+  verifyCrmSessionToken,
+} from '@/lib/crm-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,11 +14,11 @@ export async function POST(request: NextRequest) {
 
     console.log('🔐 Login attempt:', email)
 
-    // Simple validation (in production, use database)
-    const validEmail = 'jhordi@socialbrand1980.com'
-    const validPassword = '546jho'
+    const { email: validEmail, password: validPassword } = getCrmCredentials()
 
     if (email === validEmail && password === validPassword) {
+      const sessionToken = await createCrmSessionToken(email)
+
       // Create response with session cookie
       const response = NextResponse.json({
         success: true,
@@ -23,11 +30,11 @@ export async function POST(request: NextRequest) {
       })
 
       // Set httpOnly cookie (expires in 24 hours)
-      response.cookies.set('crm_session', 'authenticated', {
+      response.cookies.set(CRM_SESSION_COOKIE_NAME, sessionToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60 * 24, // 24 hours
+        maxAge: CRM_SESSION_MAX_AGE,
         path: '/',
       })
 
@@ -56,7 +63,7 @@ export async function DELETE() {
     message: 'Logged out successfully' 
   })
   
-  response.cookies.set('crm_session', '', {
+  response.cookies.set(CRM_SESSION_COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -70,14 +77,16 @@ export async function DELETE() {
 
 export async function GET(request: NextRequest) {
   // Check if user is authenticated
-  const session = request.cookies.get('crm_session')?.value
+  const session = await verifyCrmSessionToken(
+    request.cookies.get(CRM_SESSION_COOKIE_NAME)?.value
+  )
 
-  if (session === 'authenticated') {
+  if (session) {
     return NextResponse.json({ 
       authenticated: true,
       user: {
-        email: 'jhordi@socialbrand1980.com',
-        name: 'Jhordi'
+        email: session.email,
+        name: 'Admin'
       }
     })
   } else {

@@ -1,0 +1,23 @@
+{
+  "name": "socialbrand1980-content-ops",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-content-system.js",
+    "generate": "node scripts/generate-article.js",
+    "rewrite": "node scripts/rewrite-generated-articles.js",
+    "review": "node scripts/review-generated-articles.js",
+    "migrate:public-ids": "node scripts/migrate-private-article-ids.js",
+    "publish:dry": "node scripts/publish-to-sanity.js --dry-run",
+    "publish": "node scripts/publish-to-sanity.js",
+    "run": "node scripts/generate-and-publish.js"
+  },
+  "dependencies": {
+    "@sanity/client": "^7.16.0",
+    "dotenv": "^16.4.5",
+    "fast-xml-parser": "^5.5.5",
+    "sharp": "^0.34.4",
+    "slugify": "^1.6.6"
+  }
+}

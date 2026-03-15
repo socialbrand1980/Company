@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { CRM_SESSION_COOKIE_NAME, verifyCrmSessionToken } from '@/lib/crm-auth'
 
 // Google Sheet ID from your Work With Us form
 const SPREADSHEET_ID = '13ruAstGIxEl9y-9BQ1eWJsfTkYiwPAYK5obLug2q7N0'
@@ -8,6 +9,17 @@ const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxEuYl1
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await verifyCrmSessionToken(
+      request.cookies.get(CRM_SESSION_COOKIE_NAME)?.value
+    )
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     // Note: For production, consider adding authentication
     // Currently accessible everywhere for demo purposes
     
@@ -161,6 +173,17 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const session = await verifyCrmSessionToken(
+      request.cookies.get(CRM_SESSION_COOKIE_NAME)?.value
+    )
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     console.log('📝 PATCH request received')
     
     const body = await request.json()

@@ -1,0 +1,36 @@
+{
+  "_type": "article",
+  "title": "Cara Menyusun KPI Marketing yang Realistis untuk Brand yang Sedang Scale",
+  "slug": {
+    "_type": "slug",
+    "current": "cara-menyusun-kpi-marketing-yang-realistis-untuk-brand-yang-sedang-scale"
+  },
+  "excerpt": "Panduan praktis untuk memilih KPI marketing yang lebih relevan dengan keputusan bisnis, bukan sekadar angka pelaporan.",
+  "seoDescription": "Pelajari cara menyusun KPI marketing yang realistis, terukur, dan lebih berguna untuk brand yang ingin scale.",
+  "content": [
+    {
+      "_type": "block",
+      "style": "normal",
+      "markDefs": [],
+      "children": [
+        {
+          "_type": "span",
+          "marks": [],
+          "text": "Banyak brand punya dashboard marketing, tetapi tidak semua punya KPI yang membantu pengambilan keputusan."
+        }
+      ]
+    }
+  ],
+  "category": "Brand Strategy",
+  "language": "id-ID",
+  "author": "Jhordi Deamarall",
+  "status": "draft",
+  "publishedAt": "2026-03-14T08:00:00.000Z",
+  "readTime": "4 min read",
+  "practicalTakeaways": [
+    "Pastikan KPI dipilih berdasarkan objective bisnis, bukan hanya ketersediaan data.",
+    "Pisahkan metrik awareness, consideration, dan conversion agar tim tidak salah membaca performa.",
+    "Gunakan reporting sebagai alat prioritas, bukan sekadar dokumentasi."
+  ],
+  "featured": false
+}

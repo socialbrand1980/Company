@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Search, Building2, Mail, Phone, TrendingUp, DollarSign, Calendar, Users, Briefcase, Filter, Download, RefreshCw, Eye, Edit2 } from "lucide-react"
+import { Search, Mail, TrendingUp, DollarSign, Users, Briefcase, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatIDR } from "@/lib/format-currency"
 
@@ -9,7 +9,6 @@ interface Client {
   id: string
   brandName: string
   industry: string
-  status: 'active' | 'completed' | 'paused'
   startDate: string
   totalValue: number
   services: string[]
@@ -18,11 +17,55 @@ interface Client {
   phone: string
 }
 
+function parseClientTimestamp(timestamp: string): Date | null {
+  if (!timestamp) return null
+
+  if (timestamp.startsWith('Date(')) {
+    const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+    if (match) {
+      const [, year, month, day, hour, minute, second] = match
+      return new Date(Date.UTC(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second)))
+    }
+  }
+
+  if (timestamp.includes('/') && timestamp.includes(':')) {
+    const [datePart] = timestamp.split(' ')
+    const [day, month, year] = datePart.split('/')
+
+    if (day && month && year) {
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+    }
+  }
+
+  if (timestamp.includes('/')) {
+    const [day, month, year] = timestamp.split('/')
+
+    if (day && month && year) {
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+    }
+  }
+
+  const parsedDate = new Date(timestamp)
+  return isNaN(parsedDate.getTime()) ? null : parsedDate
+}
+
+function formatClientSince(timestamp: string) {
+  const parsedDate = parseClientTimestamp(timestamp)
+
+  if (!parsedDate) {
+    return 'Tanggal tidak valid'
+  }
+
+  return parsedDate.toLocaleDateString('id-ID', {
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
 export default function CRMClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
 
   useEffect(() => {
     async function fetchClients() {
@@ -38,12 +81,11 @@ export default function CRMClientsPage() {
             id: lead.email || `client-${index}`,
             brandName: lead.brandname || lead.brandName || 'Unknown',
             industry: lead.industry || 'Unknown',
-            status: 'active' as const,
             startDate: lead.timestamp || new Date().toISOString(),
             totalValue: typeof lead.budget === 'string' 
               ? parseInt(lead.budget.replace(/[^0-9]/g, '') || '0') || 0
               : (lead.budget as number) || 0,
-            services: lead.servicesneeded?.split(',').map((s: string) => s.trim()) || [],
+            services: lead.servicesneeded?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
             contactName: lead.fullname || lead.fullName || 'Unknown',
             email: lead.email || '',
             phone: lead.phone || ''
@@ -65,15 +107,13 @@ export default function CRMClientsPage() {
       client.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.industry.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || client.status === statusFilter
-    
-    return matchesSearch && matchesStatus
+
+    return matchesSearch
   })
 
   const stats = {
     total: clients.length,
-    active: clients.filter(c => c.status === 'active').length,
+    wonDeals: clients.length,
     totalValue: clients.reduce((acc, c) => acc + c.totalValue, 0)
   }
 
@@ -94,7 +134,7 @@ export default function CRMClientsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">Clients</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage your active and past clients</p>
+            <p className="text-sm text-muted-foreground mt-1">Daftar client dari deal yang sudah closed won</p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="gap-2 bg-white/[0.03] border-white/[0.08]">
@@ -108,13 +148,13 @@ export default function CRMClientsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <StatCard icon={Users} label="Total Clients" value={stats.total.toString()} trendColor="blue" />
-          <StatCard icon={TrendingUp} label="Active" value={stats.active.toString()} trendColor="green" />
+          <StatCard icon={TrendingUp} label="Closed Won" value={stats.wonDeals.toString()} trendColor="green" />
           <StatCard icon={DollarSign} label="Total Value" value={formatIDR(stats.totalValue)} trendColor="green" />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -124,19 +164,6 @@ export default function CRMClientsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-foreground text-sm transition-colors"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] focus:border-blue-500/50 focus:outline-none text-foreground text-sm min-w-[200px]"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="paused">Paused</option>
-            </select>
           </div>
         </div>
 
@@ -167,7 +194,7 @@ export default function CRMClientsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-white">{client.brandName}</p>
-                          <p className="text-xs text-muted-foreground">Since {new Date(client.startDate).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}</p>
+                          <p className="text-xs text-muted-foreground">Since {formatClientSince(client.startDate)}</p>
                         </div>
                       </div>
                     </td>
@@ -201,12 +228,8 @@ export default function CRMClientsPage() {
                       <span className="text-sm text-white font-medium">{formatIDR(client.totalValue)}</span>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`text-xs px-3 py-1.5 rounded-full border inline-block min-w-[100px] ${
-                        client.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                        client.status === 'completed' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                        'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                      }`}>
-                        {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+                      <span className="text-xs px-3 py-1.5 rounded-full border inline-block min-w-[100px] bg-green-500/10 text-green-400 border-green-500/20">
+                        Client
                       </span>
                     </td>
                     <td className="p-4">

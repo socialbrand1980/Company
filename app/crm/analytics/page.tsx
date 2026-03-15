@@ -23,22 +23,63 @@ interface FunnelData {
   color: string
 }
 
+interface DateRange {
+  startDate: Date | null
+  endDate: Date | null
+  label: string
+}
+
 interface MonthlyData {
-  month: string
   year: number
   label: string
   value: number
   count: number
   clients: string[]
+  sortTime: number
+}
+
+function parseLeadTimestamp(timestamp: string): Date | null {
+  if (!timestamp) return null
+
+  if (timestamp.startsWith('Date(')) {
+    const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+
+    if (match) {
+      const [, year, month, day, hour, minute, second] = match
+      return new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+    }
+  }
+
+  const parsedDate = new Date(timestamp)
+  return isNaN(parsedDate.getTime()) ? null : parsedDate
+}
+
+function isLeadWithinDateRange(leadDate: Date | null, dateRange: DateRange) {
+  if (!leadDate) return true
+  if (!dateRange.startDate && !dateRange.endDate) return true
+
+  if (dateRange.startDate) {
+    const start = new Date(dateRange.startDate)
+    start.setHours(0, 0, 0, 0)
+    if (leadDate < start) return false
+  }
+
+  if (dateRange.endDate) {
+    const end = new Date(dateRange.endDate)
+    end.setHours(23, 59, 59, 999)
+    if (leadDate > end) return false
+  }
+
+  return true
 }
 
 export default function CRMAnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [leads, setLeads] = useState<Lead[]>([])
-  const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null; label: string }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     startDate: null,
     endDate: null,
-    label: "Last 7 days"
+    label: "All time"
   })
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
 
@@ -103,27 +144,10 @@ export default function CRMAnalyticsPage() {
         return
       }
 
-      // Parse timestamp from Google Sheets format "Date(2026,2,8,13,3,42)"
-      let leadDate: Date
-      
-      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
-        // Extract: Date(year, month, day, hour, minute, second)
-        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
-        if (match) {
-          const [, year, month, day, hour, minute, second] = match
-          // Google Sheets appears to use 0-indexed months like JS (0=Jan, 1=Feb, 2=Mar)
-          // So month=2 means March, no conversion needed
-          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
-          console.log('Parsed GS timestamp:', lead.timestamp, '→', leadDate.toISOString(), '(month:', Number(month), '= March, no conversion)')
-        } else {
-          leadDate = new Date(lead.timestamp)
-        }
-      } else {
-        leadDate = new Date(lead.timestamp)
-      }
+      const leadDate = parseLeadTimestamp(lead.timestamp)
       
       // Check if date is valid
-      if (isNaN(leadDate.getTime())) {
+      if (!leadDate) {
         console.log('Lead:', lead.brandname, '❌ Invalid timestamp:', lead.timestamp)
         return
       }
@@ -171,27 +195,25 @@ export default function CRMAnalyticsPage() {
       let key: string
       let label: string
       let periodYear: number
-      let periodMonth: number
+      let sortTime: number
 
       if (groupByDay) {
         key = `${year}-${month}-${day}`
-        // Format: "8 Mar" or "8 Mar 2026" if different year
         const monthName = monthNames[month]
         label = year === new Date().getFullYear() ? `${day} ${monthName}` : `${day} ${monthName} ${year}`
         periodYear = year
-        periodMonth = month
+        sortTime = new Date(year, month, day).getTime()
       } else if (groupByWeek) {
-        // Calculate week number
         const weekNumber = Math.ceil(day / 7)
         key = `${year}-${month}-W${weekNumber}`
         label = `Week ${weekNumber}`
         periodYear = year
-        periodMonth = month
+        sortTime = new Date(year, month, (weekNumber - 1) * 7 + 1).getTime()
       } else {
         key = `${year}-${month}`
         label = monthNames[month]
         periodYear = year
-        periodMonth = month
+        sortTime = new Date(year, month, 1).getTime()
       }
 
       const budgetValue = typeof lead.budget === 'string'
@@ -200,12 +222,12 @@ export default function CRMAnalyticsPage() {
 
       if (!data[key]) {
         data[key] = {
-          month: label,
           label: label,
           year: periodYear,
           value: 0,
           count: 0,
-          clients: []
+          clients: [],
+          sortTime,
         }
       }
 
@@ -218,22 +240,7 @@ export default function CRMAnalyticsPage() {
     console.log('❌ Skipped leads count:', skippedCount)
     console.log('Grouped data:', data)
 
-    const sortedData = Object.values(data).sort((a, b) => {
-      // Year sorting
-      if (a.year !== b.year) {
-        return Number(a.year) - Number(b.year)
-      }
-      // Month sorting (0-11)
-      if (a.month !== b.month) {
-        return Number(a.month) - Number(b.month)
-      }
-      // Handle week/day sorting
-      const aLabel = String(a.label || a.month)
-      const bLabel = String(b.label || b.month)
-      const aNum = Number(aLabel.replace('W', '')) || 0
-      const bNum = Number(bLabel.replace('W', '')) || 0
-      return aNum - bNum
-    })
+    const sortedData = Object.values(data).sort((a, b) => a.sortTime - b.sortTime)
 
     console.log('Sorted data:', sortedData)
     setMonthlyData(sortedData)
@@ -242,41 +249,8 @@ export default function CRMAnalyticsPage() {
   // Calculate stats (filtered by date range)
   const getFilteredStats = () => {
     const filteredLeads = leads.filter((lead: Lead) => {
-      // Parse timestamp from Google Sheets format "Date(2026,2,8,13,3,42)"
-      let leadDate: Date
-      
-      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
-        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
-        if (match) {
-          const [, year, month, day, hour, minute, second] = match
-          // Google Sheets uses 0-indexed months like JS
-          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
-        } else {
-          leadDate = new Date(lead.timestamp)
-        }
-      } else {
-        leadDate = new Date(lead.timestamp)
-      }
-      
-      // Check if date is valid
-      if (isNaN(leadDate.getTime())) return true
-
-      // If no date range selected, include all
-      if (!dateRange.startDate && !dateRange.endDate) return true
-
-      // Filter by date range
-      if (dateRange.startDate) {
-        const start = new Date(dateRange.startDate as Date)
-        start.setHours(0, 0, 0, 0)
-        if (leadDate < start) return false
-      }
-      if (dateRange.endDate) {
-        const end = new Date(dateRange.endDate as Date)
-        end.setHours(23, 59, 59, 999)
-        if (leadDate > end) return false
-      }
-
-      return true
+      const leadDate = parseLeadTimestamp(lead.timestamp)
+      return isLeadWithinDateRange(leadDate, dateRange)
     })
 
     console.log('📊 Filtered Stats:', {
@@ -343,37 +317,8 @@ export default function CRMAnalyticsPage() {
   // Industry breakdown (using filtered stats)
   const industryBreakdown = leads
     .filter((lead: Lead) => {
-      // Parse timestamp from Google Sheets format
-      let leadDate: Date
-      
-      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
-        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
-        if (match) {
-          const [, year, month, day, hour, minute, second] = match
-          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
-        } else {
-          leadDate = new Date(lead.timestamp)
-        }
-      } else {
-        leadDate = new Date(lead.timestamp)
-      }
-      
-      if (isNaN(leadDate.getTime())) return true
-      
-      if (!dateRange.startDate && !dateRange.endDate) return true
-      
-      if (dateRange.startDate) {
-        const start = new Date(dateRange.startDate)
-        start.setHours(0, 0, 0, 0)
-        if (leadDate < start) return false
-      }
-      if (dateRange.endDate) {
-        const end = new Date(dateRange.endDate)
-        end.setHours(23, 59, 59, 999)
-        if (leadDate > end) return false
-      }
-      
-      return true
+      const leadDate = parseLeadTimestamp(lead.timestamp)
+      return isLeadWithinDateRange(leadDate, dateRange)
     })
     .reduce((acc: any, lead: Lead) => {
       const industry = lead.industry || 'Other'
@@ -387,36 +332,8 @@ export default function CRMAnalyticsPage() {
     
     // Get filtered leads based on current date range
     const filteredLeads = leads.filter((lead: Lead) => {
-      let leadDate: Date
-      
-      if (typeof lead.timestamp === 'string' && lead.timestamp.startsWith('Date(')) {
-        const match = lead.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
-        if (match) {
-          const [, year, month, day, hour, minute, second] = match
-          leadDate = new Date(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
-        } else {
-          leadDate = new Date(lead.timestamp)
-        }
-      } else {
-        leadDate = new Date(lead.timestamp)
-      }
-      
-      if (isNaN(leadDate.getTime())) return true
-      
-      if (!dateRange.startDate && !dateRange.endDate) return true
-      
-      if (dateRange.startDate) {
-        const start = new Date(dateRange.startDate)
-        start.setHours(0, 0, 0, 0)
-        if (leadDate < start) return false
-      }
-      if (dateRange.endDate) {
-        const end = new Date(dateRange.endDate)
-        end.setHours(23, 59, 59, 999)
-        if (leadDate > end) return false
-      }
-      
-      return true
+      const leadDate = parseLeadTimestamp(lead.timestamp)
+      return isLeadWithinDateRange(leadDate, dateRange)
     })
 
     console.log('Filtered leads for export:', filteredLeads.length)
@@ -707,7 +624,7 @@ export default function CRMAnalyticsPage() {
                   
                   return (
                     <div
-                      key={`${data.month}-${data.year}-${index}`}
+                      key={`${data.label}-${data.year}-${index}`}
                       className="flex-1 flex flex-col items-center gap-2 group relative z-10"
                     >
                       {/* Tooltip */}

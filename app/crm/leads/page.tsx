@@ -107,6 +107,63 @@ function formatTimestamp(timestamp: any): string {
   }
 }
 
+function parseTimestampForSort(timestamp: string): number {
+  if (!timestamp) return 0
+
+  try {
+    if (timestamp.startsWith('Date(')) {
+      const match = timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/)
+      if (match) {
+        const [, year, month, day, hour, minute, second] = match
+        return Date.UTC(Number(year), Number(month), Number(day), Number(hour), Number(minute), Number(second))
+      }
+    }
+
+    if (timestamp.includes('/') && timestamp.includes(':')) {
+      const [datePart] = timestamp.split(' ')
+      const [day, month, year] = datePart.split('/')
+
+      if (day && month && year) {
+        return Date.UTC(Number(year), Number(month) - 1, Number(day))
+      }
+    }
+
+    if (timestamp.includes('/')) {
+      const [day, month, year] = timestamp.split('/')
+
+      if (day && month && year) {
+        return Date.UTC(Number(year), Number(month) - 1, Number(day))
+      }
+    }
+
+    const parsedDate = new Date(timestamp)
+    return isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime()
+  } catch {
+    return 0
+  }
+}
+
+function parseBudgetForSort(budget: string): number {
+  if (!budget) return 0
+  return parseInt(String(budget).replace(/[^0-9]/g, '')) || 0
+}
+
+function compareLeads(a: Lead, b: Lead, field: keyof Lead, direction: "asc" | "desc") {
+  const multiplier = direction === "asc" ? 1 : -1
+
+  if (field === "timestamp") {
+    return (parseTimestampForSort(a.timestamp) - parseTimestampForSort(b.timestamp)) * multiplier
+  }
+
+  if (field === "budget") {
+    return (parseBudgetForSort(a.budget) - parseBudgetForSort(b.budget)) * multiplier
+  }
+
+  const aVal = String(a[field] || "").toLowerCase()
+  const bVal = String(b[field] || "").toLowerCase()
+  return aVal.localeCompare(bVal) * multiplier
+}
+
 interface Lead {
   timestamp: string
   brandname: string
@@ -205,15 +262,7 @@ export default function CRMLeadsPage() {
       
       return matchesSearch && matchesStatus
     })
-    .sort((a, b) => {
-      const aVal = a[sortField]?.toLowerCase() || ""
-      const bVal = b[sortField]?.toLowerCase() || ""
-      if (sortDirection === "asc") {
-        return aVal.localeCompare(bVal)
-      } else {
-        return bVal.localeCompare(aVal)
-      }
-    })
+    .sort((a, b) => compareLeads(a, b, sortField, sortDirection))
 
   const updateLeadStatus = async (email: string, newStatus: string) => {
     setUpdatingEmail(email)

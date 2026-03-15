@@ -85,11 +85,17 @@ export interface Article {
   title: string
   slug: string
   excerpt: string
+  seoDescription?: string
   content: any[]
   category: string
+  language?: string
   author: string
+  status?: string
   publishedAt: string
   readTime: string
+  practicalTakeaways?: string[]
+  coverImageBrief?: string
+  coverImageAlt?: string
   featured: boolean
   imageUrl?: string
   mainImage?: {
